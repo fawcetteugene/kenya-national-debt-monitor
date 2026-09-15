@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>🇰🇪 Kenya National Debt Monitor | Live Counter + Simulator</title>
+  <!-- Fonts & Chart.js -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f4f2ef;
+      --surface: #ffffff;
+      --text: #1a1a1a;
+      --muted: #5e6b7c;
+      --border: #e2e4e8;
+      --red: #c52a2f;
+      --red-dark: #9e1e22;
+      --red-light: #fde7e8;
+      --green: #1f8a4c;
+      --green-light: #e3f5ea;
+      --amber: #e67e22;
+      --amber-light: #feede0;
+      --shadow: 0 8px 20px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.02);
+      --radius: 20px;
+      --radius-sm: 12px;
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    .dark {
+      --bg: #111214;
+      --surface: #1c1e22;
+      --text: #ededee;
+      --muted: #9aa2b0;
+      --border: #2d3038;
+      --red-light: #2f1518;
+      --green-light: #122a1d;
+      --amber-light: #2f2110;
+      --shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      transition: background 0.2s, color 0.2s;
+      padding: 1.5rem;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      background: var(--surface);
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(4px);
+      position: sticky;
+      top: 1rem;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .flag {
+      display: flex;
+      height: 36px;
+      width: 48px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .flag span { flex: 1; }
+    .flag span:nth-child(1) { background: #0a0a0a; }
+    .flag span:nth-child(2) { background: #c52a2f; }
+    .flag span:nth-child(3) { background: #1f8a4c; }
+
+    .title h1 { font-size: 1.25rem; font-weight: 700; }
+    .title p { font-size: 0.75rem; color: var(--muted); }
+
+    .toolbar {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    button, .btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    button:hover {
+      background: var(--bg);
+      transform: translateY(-1px);
+    }
+    .btn-primary {
+      background: var(--red);
+      border-color: var(--red);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--red-dark);
+    }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: #1f8a4c;
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
+    .live-dot.paused { background: #e67e22; animation: none; }
+
+    /* cards grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      transition: transform 0.1s ease;
+    }
+    .col-span-12 { grid-column: span 12; }
+    .col-span-6 { grid-column: span 6; }
+    .col-span-4 { grid-column: span 4; }
+    .col-span-3 { grid-column: span 3; }
+    @media (max-width: 768px) {
+      .col-span-6, .col-span-4, .col-span-3 { grid-column: span 12; }
+      .grid { gap: 1rem; }
+    }
+
+    /* counter */
+    .counter-number {
+      font-family: var(--font-mono);
+      font-size: 2.4rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      word-break: break-word;
+    }
+    .sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+    .ticker {
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      margin-top: 1rem;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+    }
+
+    /* slider & sim */
+    .sim-control {
+      margin-bottom: 1rem;
+    }
+    .sim-control label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--red);
+    }
+    .metric-badge {
+      background: var(--bg);
+      border-radius: 40px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.7rem;
+      font-weight: 500;
+    }
+
+    /* charts */
+    .chart-container {
+      position: relative;
+      height: 220px;
+      width: 100%;
+    }
+
+    /* timeline */
+    .timeline-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 120px 80px;
+      gap: 1rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .timeline-header {
+      font-weight: 700;
+      color: var(--muted);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+    }
+    .bar-progress {
+      background: var(--border);
+      border-radius: 12px;
+      height: 6px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      background: var(--red);
+      height: 100%;
+      width: 0%;
+    }
+
+    /* footer */
+    .footer {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--muted);
+      padding: 2rem 0 1rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--surface);
+      border-left: 4px solid var(--red);
+      padding: 0.8rem 1.2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      font-size: 0.8rem;
+      z-index: 200;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+<div class="container">
+  <!-- header -->
+  <div class="header">
+    <div class="logo">
+      <div class="flag"><span></span><span></span><span></span></div>
+      <div class="title">
+        <h1>🇰🇪 Kenya National Debt Monitor</h1>
+        <p>World Bank data • live exchange rate • real‑time simulation</p>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button id="themeToggle" aria-label="Dark mode">🌓 Theme</button>
+      <button id="langToggle" aria-label="Language">EN / SW</button>
+      <button id="pauseLiveBtn"><span id="liveDot" class="live-dot"></span> <span id="pauseLabel">Pause</span></button>
+      <button id="refreshBtn" class="btn-primary">⟳ Refresh data</button>
+    </div>
+  </div>
+
+  <!-- hero + main counter -->
+  <div class="grid">
+    <div class="card col-span-12">
+      <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span class="metric-badge">📡 Live since anchor: <span id="anchorYear">—</span></span>
+          <span class="metric-badge" style="margin-left: 0.5rem;">💱 USD/KES: <span id="fxRate">—</span></span>
+        </div>
+        <div><span id="dataStatus" class="metric-badge">⚡ Loading...</span></div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1.5rem;">
+        <div>
+          <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--muted);">External debt (USD)</div>
+          <div id="usdCounter" class="counter-number">$0</div>
+          <div class="sub">Based on World Bank DT.DOD.DECT.CD</div>
+        </div>
+        <div>
+          <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--muted);">Kenyan Shillings</div>
+          <div id="kesCounter" class="counter-number" style="color: var(--red);">KSh 0</div>
+          <div class="sub">Live USD/KES conversion</div>
+        </div>
+      </div>
+      <div class="ticker">
+        <span>📈 Growth per second: <strong id="perSec">—</strong></span>
+        <span>📅 Daily increase: <strong id="dailyInc">—</strong></span>
+        <span>👥 Per citizen (KSh): <strong id="perCapita">—</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- key metrics -->
+  <div class="grid">
+    <div class="card col-span-3"><div style="font-size:0.7rem;color:var(--muted);">Debt-to-GDP</div><div id="debtToGdp" class="counter-number" style="font-size:1.8rem;">—</div><div class="sub">external debt / GDP</div></div>
+    <div class="card col-span-3"><div style="font-size:0.7rem;color:var(--muted);">Annual growth (USD)</div><div id="annualGrowth" class="counter-number" style="font-size:1.8rem;">—</div><div class="sub">12% trend assumption</div></div>
+    <div class="card col-span-3"><div style="font-size:0.7rem;color:var(--muted);">Interest burden (est.)</div><div id="interestBurden" class="counter-number" style="font-size:1.8rem;">—</div><div class="sub">6.5% avg rate</div></div>
+    <div class="card col-span-3"><div style="font-size:0.7rem;color:var(--muted);">Fiscal pressure</div><div id="pressureLevel" class="counter-number" style="font-size:1.8rem;">Moderate</div><div class="sub">based on debt/GDP</div></div>
+  </div>
+
+  <!-- historical charts -->
+  <div class="grid">
+    <div class="card col-span-6"><div style="font-weight:600; margin-bottom:0.5rem;">📉 External debt trend (USD bn)</div><div class="chart-container"><canvas id="debtChart"></canvas></div></div>
+    <div class="card col-span-6"><div style="font-weight:600; margin-bottom:0.5rem;">📊 Debt-to-GDP ratio (%)</div><div class="chart-container"><canvas id="debtGdpChart"></canvas></div></div>
+  </div>
+
+  <!-- interactive simulators -->
+  <div class="grid">
+    <div class="card col-span-6">
+      <h3 style="font-size:1.2rem; margin-bottom:1rem;">🎚️ Scenario simulator</h3>
+      <div class="sim-control"><label>Annual debt growth (%) <span id="simRateVal">12.0%</span></label><input type="range" id="simRate" min="0" max="25" step="0.5" value="12"></div>
+      <div class="sim-control"><label>Years ahead <span id="simYearsVal">5</span></label><input type="range" id="simYears" min="1" max="20" step="1" value="5"></div>
+      <div class="sim-control"><label>USD/KES <span id="simFxVal">129</span></label><input type="range" id="simFx" min="100" max="250" step="1" value="129"></div>
+      <div class="sim-control"><label>Population (millions) <span id="simPopVal">55</span></label><input type="range" id="simPop" min="40" max="80" step="1" value="55"></div>
+      <div style="background:var(--bg); border-radius:12px; padding:1rem; margin-top:0.5rem;">
+        <div style="display:flex; justify-content:space-between;"><span>Projected debt (USD)</span><strong id="projDebt">—</strong></div>
+        <div style="display:flex; justify-content:space-between; margin-top:6px;"><span>Per capita USD</span><strong id="projPerCap">—</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span>Debt/GDP (est)</span><strong id="projGdpRatio">—</strong></div>
+      </div>
+    </div>
+    <div class="card col-span-6">
+      <h3 style="font-size:1.2rem; margin-bottom:1rem;">⚖️ Debt stabilisation tool</h3>
+      <div class="sim-control"><label>Nominal GDP growth (%) <span id="gdpGrowthVal">8.5%</span></label><input type="range" id="gdpGrowth" min="2" max="15" step="0.5" value="8.5"></div>
+      <div class="sim-control"><label>Primary surplus (% of GDP) <span id="primSurplusVal">0.5%</span></label><input type="range" id="primSurplus" min="-3" max="5" step="0.2" value="0.5"></div>
+      <div class="sim-control"><label>Average interest rate (%) <span id="intRateVal">6.5%</span></label><input type="range" id="intRate" min="2" max="12" step="0.2" value="6.5"></div>
+      <div style="background:var(--bg); border-radius:12px; padding:1rem;">
+        <div><span>Debt/GDP after 5 years:</span> <strong id="stabRatio">—</strong> <span id="stabDir"></span></div>
+        <div class="sub" id="stabAdvice"></div>
+        <div class="chart-container" style="height:100px; margin-top:8px;"><canvas id="stabChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- timeline & comparison -->
+  <div class="grid">
+    <div class="card col-span-7">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-size:1.1rem;">📅 Debt history (World Bank)</h3>
+        <button id="exportCsv" class="metric-badge">⬇️ Export CSV</button>
+      </div>
+      <div id="timelineContainer"></div>
+    </div>
+    <div class="card col-span-5">
+      <h3 style="font-size:1.1rem; margin-bottom:1rem;">🌍 East Africa comparison</h3>
+      <div id="compareTable" style="display:flex; flex-direction: column; gap:0.8rem;"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Data: World Bank (DT.DOD.DECT.CD, NY.GDP.MKTP.CD) · FX: ExchangeRate-API · Simulation assumes 12% annual compounding from latest anchor.</span>
+  </div>
+</div>
+
+<script>
+  // ---------- GLOBALS ----------
+  const POPULATION = 55_000_000;
+  const GROWTH_ANNUAL = 0.12;
+  const SECS_PER_YEAR = 365.2425 * 86400;
+  let debtBase = 80_000_000_000;    // fallback
+  let debtBaseYear = 2022;
+  let debtTimestamp = Date.now();
+  let fxRate = 129.0;
+  let gdpCurrent = 110_000_000_000;
+  let historicalDebt = [];   // {year, value}
+  let historicalGdp = [];
+  let paused = false;
+  let lastSecond = null;
+  let charts = {};
+  let stabChart = null;
+  let interval;
+  let lang = 'en';   // simple en only for demo, toggle dummy
+
+  // helpers
+  const fmtUsd = (v) => '$' + Math.round(v).toLocaleString();
+  const fmtKes = (v) => 'KSh ' + Math.round(v).toLocaleString();
+  const currentDebt = (now) => debtBase * Math.pow(1 + GROWTH_ANNUAL, Math.max(0, (now - debtTimestamp) / (SECS_PER_YEAR * 1000)));
+  const currentFx = () => fxRate || 129;
+
+  // update DOM elements with live values
+  function updateDisplay() {
+    if (paused) return;
+    const now = Date.now();
+    const debtUsd = currentDebt(now);
+    const kes = debtUsd * currentFx();
+    const perCapKes = kes / POPULATION;
+    const debtToGdp = (debtUsd / gdpCurrent) * 100;
+    const annualInc = debtUsd * GROWTH_ANNUAL;
+    const dailyInc = annualInc / 365.2425;
+    const perSecInc = debtUsd * (Math.pow(1 + GROWTH_ANNUAL, 1 / SECS_PER_YEAR) - 1);
+    const interestEst = debtUsd * 0.065;
+    document.getElementById('usdCounter').innerText = fmtUsd(debtUsd);
+    document.getElementById('kesCounter').innerText = fmtKes(kes);
+    document.getElementById('perSec').innerText = fmtKes(perSecInc) + '/sec';
+    document.getElementById('dailyInc').innerText = fmtUsd(dailyInc);
+    document.getElementById('perCapita').innerText = fmtKes(perCapKes);
+    document.getElementById('debtToGdp').innerText = debtToGdp.toFixed(1) + '%';
+    document.getElementById('annualGrowth').innerText = fmtUsd(annualInc);
+    document.getElementById('interestBurden').innerText = fmtUsd(interestEst);
+    let pressure = debtToGdp >= 75 ? 'High' : (debtToGdp >= 55 ? 'Moderate' : 'Manageable');
+    document.getElementById('pressureLevel').innerText = pressure;
+
+    // update scenario sim values dynamically
+    updateScenario();
+    updateStabilisation();
+  }
+
+  // scenario simulator using current debt as base
+  function updateScenario() {
+    const rate = parseFloat(document.getElementById('simRate').value) / 100;
+    const years = parseFloat(document.getElementById('simYears').value);
+    const fx = parseFloat(document.getElementById('simFx').value);
+    const pop = parseFloat(document.getElementById('simPop').value) * 1e6;
+    document.getElementById('simRateVal').innerText = (rate*100).toFixed(1)+'%';
+    document.getElementById('simYearsVal').innerText = years;
+    document.getElementById('simFxVal').innerText = fx;
+    document.getElementById('simPopVal').innerText = pop/1e6;
+    const baseDebt = currentDebt(Date.now());
+    const futureDebt = baseDebt * Math.pow(1 + rate, years);
+    const futureGdp = gdpCurrent * Math.pow(1.055, years); // moderate gdp growth
+    const ratio = (futureDebt / futureGdp) * 100;
+    document.getElementById('projDebt').innerText = fmtUsd(futureDebt);
+    document.getElementById('projPerCap').innerText = fmtUsd(futureDebt / pop);
+    document.getElementById('projGdpRatio').innerText = ratio.toFixed(1)+'%';
+  }
+
+  // stabilisation tool: debt dynamics Δd = (i - g)*d - pb
+  function updateStabilisation() {
+    const debtNow = currentDebt(Date.now());
+    const gdpNow = gdpCurrent;
+    let d0 = debtNow / gdpNow;
+    const i = parseFloat(document.getElementById('intRate').value) / 100;
+    const g = parseFloat(document.getElementById('gdpGrowth').value) / 100;
+    const pb = parseFloat(document.getElementById('primSurplus').value) / 100;
+    document.getElementById('intRateVal').innerText = (i*100).toFixed(1)+'%';
+    document.getElementById('gdpGrowthVal').innerText = (g*100).toFixed(1)+'%';
+    document.getElementById('primSurplusVal').innerText = (pb*100).toFixed(1)+'%';
+    let d = d0;
+    const path = [];
+    for (let t=1; t<=5; t++) {
+      d = d + (i - g)*d - pb;
+      if (d<0) d=0;
+      path.push(d*100);
+    }
+    const finalRatio = d*100;
+    document.getElementById('stabRatio').innerHTML = finalRatio.toFixed(1)+'%';
+    const dir = finalRatio > d0*100+1 ? '🔴 rising' : (finalRatio < d0*100-1 ? '🟢 falling' : '⚖️ stable');
+    document.getElementById('stabDir').innerHTML = dir;
+    let advice = '';
+    if (finalRatio > 85) advice = 'High risk: increase primary surplus or boost growth';
+    else if (finalRatio > 65) advice = 'Moderate consolidation needed';
+    else advice = 'Debt trajectory manageable';
+    document.getElementById('stabAdvice').innerHTML = advice;
+    if (stabChart) stabChart.destroy();
+    const ctx = document.getElementById('stabChart').getContext('2d');
+    stabChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: [1,2,3,4,5], datasets: [{ data: path, borderColor: '#c52a2f', fill: true, backgroundColor: 'rgba(197,42,47,0.1)' }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ctx.raw.toFixed(1)+'%' } } } }
+    });
+  }
+
+  // fetch World Bank & FX
+  async function fetchData() {
+    try {
+      const [debtRes, gdpRes, fxRes] = await Promise.allSettled([
+        fetch('https://api.worldbank.org/v2/country/KE/indicator/DT.DOD.DECT.CD?format=json&per_page=200').then(r=>r.json()),
+        fetch('https://api.worldbank.org/v2/country/KE/indicator/NY.GDP.MKTP.CD?format=json&per_page=200').then(r=>r.json()),
+        fetch('https://api.exchangerate-api.com/v4/latest/USD').then(r=>r.json())
+      ]);
+      if (debtRes.status === 'fulfilled' && debtRes.value[1]) {
+        const series = debtRes.value[1].filter(d => d.value).map(d => ({ year: parseInt(d.date), value: parseFloat(d.value) })).sort((a,b)=>a.year-b.year);
+        if (series.length) {
+          historicalDebt = series;
+          const latest = series[series.length-1];
+          debtBase = latest.value;
+          debtBaseYear = latest.year;
+          debtTimestamp = Date.now();
+        }
+      }
+      if (gdpRes.status === 'fulfilled' && gdpRes.value[1]) {
+        const gdpSeries = gdpRes.value[1].filter(d=>d.value).map(d=>({year:parseInt(d.date),value:parseFloat(d.value)}));
+        if (gdpSeries.length) {
+          historicalGdp = gdpSeries;
+          const lastGdp = gdpSeries[gdpSeries.length-1];
+          gdpCurrent = lastGdp.value;
+        }
+      }
+      if (fxRes.status === 'fulfilled' && fxRes.value.rates?.KES) {
+        fxRate = fxRes.value.rates.KES;
+      }
+      document.getElementById('anchorYear').innerText = debtBaseYear;
+      document.getElementById('fxRate').innerText = fxRate.toFixed(2);
+      document.getElementById('dataStatus').innerHTML = debtBaseYear ? '✅ Live data' : '⚠️ Estimate';
+      renderHistoricalCharts();
+      renderTimeline();
+      renderComparison();
+      updateDisplay();
+    } catch(e) {
+      console.warn(e);
+      document.getElementById('dataStatus').innerHTML = '⚠️ Using fallback';
+    }
+  }
+
+  function renderHistoricalCharts() {
+    if (!historicalDebt.length) return;
+    const years = historicalDebt.map(d => d.year);
+    const debtValues = historicalDebt.map(d => d.value / 1e9);
+    if (charts.debt) charts.debt.destroy();
+    charts.debt = new Chart(document.getElementById('debtChart'), {
+      type: 'line',
+      data: { labels: years, datasets: [{ data: debtValues, borderColor: '#c52a2f', fill: true, backgroundColor: 'rgba(197,42,47,0.05)', tension: 0.3 }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { callbacks: { label: (ctx) => '$' + ctx.raw.toFixed(1) + 'B' } } } }
+    });
+    // debt/gdp chart
+    const ratios = [];
+    const ratioYears = [];
+    for (let d of historicalDebt) {
+      const g = historicalGdp.find(g => g.year === d.year);
+      if (g && g.value > 0) {
+        ratios.push((d.value / g.value) * 100);
+        ratioYears.push(d.year);
+      }
+    }
+    if (charts.gdpRatio) charts.gdpRatio.destroy();
+    charts.gdpRatio = new Chart(document.getElementById('debtGdpChart'), {
+      type: 'line',
+      data: { labels: ratioYears, datasets: [{ data: ratios, borderColor: '#1f8a4c', fill: true, backgroundColor: 'rgba(31,138,76,0.05)' }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { callbacks: { label: (ctx) => ctx.raw.toFixed(1)+'%' } } } }
+    });
+  }
+
+  function renderTimeline() {
+    const container = document.getElementById('timelineContainer');
+    if (!historicalDebt.length) { container.innerHTML = '<div class="sub">No historical data loaded</div>'; return; }
+    let html = `<div class="timeline-row timeline-header"><div>Year</div><div>Debt (USD)</div><div>% of GDP</div><div>Trend</div></div>`;
+    const maxDebt = Math.max(...historicalDebt.map(d=>d.value));
+    for (let i = historicalDebt.length-1; i >= 0; i--) {
+      const d = historicalDebt[i];
+      const g = historicalGdp.find(g=>g.year === d.year);
+      const ratio = g ? (d.value / g.value)*100 : 0;
+      const barWidth = (d.value / maxDebt) * 100;
+      let prev = historicalDebt[i-1];
+      let pctChange = prev ? ((d.value - prev.value)/prev.value*100).toFixed(1) : '';
+      html += `<div class="timeline-row"><div>${d.year}</div><div>${fmtUsd(d.value)}</div><div>${ratio.toFixed(1)}%</div><div><div class="bar-progress"><div class="bar-fill" style="width:${barWidth}%"></div></div><span style="font-size:0.7rem;">${pctChange? (pctChange>0? '▲':'▼')+Math.abs(pctChange)+'%' : ''}</span></div></div>`;
+    }
+    container.innerHTML = html;
+  }
+
+  function renderComparison() {
+    const currentDebtVal = currentDebt(Date.now());
+    const compData = [
+      { country: 'Kenya', debt: currentDebtVal, flag: '🇰🇪' },
+      { country: 'Tanzania', debt: 26e9, flag: '🇹🇿' },
+      { country: 'Uganda', debt: 22e9, flag: '🇺🇬' },
+      { country: 'Rwanda', debt: 8e9, flag: '🇷🇼' },
+      { country: 'Ethiopia', debt: 28e9, flag: '🇪🇹' }
+    ];
+    const maxDebt = Math.max(...compData.map(c=>c.debt));
+    const container = document.getElementById('compareTable');
+    container.innerHTML = compData.map(c => `
+      <div style="background:var(--bg); border-radius:12px; padding:0.8rem;">
+        <div style="display:flex; justify-content:space-between;"><span>${c.flag} ${c.country}</span><strong>${fmtUsd(c.debt)}</strong></div>
+        <div class="bar-progress" style="margin-top:6px;"><div class="bar-fill" style="width:${(c.debt/maxDebt)*100}%; background:${c.country==='Kenya'?'var(--red)':'var(--muted)'}"></div></div>
+      </div>
+    `).join('');
+  }
+
+  // export csv
+  function exportCSV() {
+    if (!historicalDebt.length) return;
+    let csv = "Year,Debt_USD,GDP_USD,Debt_to_GDP_pct\n";
+    for (let d of historicalDebt) {
+      const g = historicalGdp.find(g=>g.year===d.year);
+      const ratio = g ? ((d.value/g.value)*100).toFixed(2) : '';
+      csv += `${d.year},${d.value},${g?g.value:''},${ratio}\n`;
+    }
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `kenya_debt_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // UI interactions
+  function togglePause() {
+    paused = !paused;
+    const dot = document.getElementById('liveDot');
+    const label = document.getElementById('pauseLabel');
+    dot.classList.toggle('paused', paused);
+    label.innerText = paused ? 'Resume' : 'Pause';
+    if (!paused) updateDisplay();
+  }
+
+  // theme
+  function initTheme() {
+    const dark = localStorage.getItem('ke_theme') === 'dark' || (!localStorage.getItem('ke_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (dark) document.documentElement.classList.add('dark');
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('ke_theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    });
+  }
+
+  // event binding
+  document.getElementById('pauseLiveBtn').addEventListener('click', togglePause);
+  document.getElementById('refreshBtn').addEventListener('click', () => fetchData().then(()=>updateDisplay()));
+  document.getElementById('exportCsv').addEventListener('click', exportCSV);
+  document.getElementById('simRate').addEventListener('input', updateScenario);
+  document.getElementById('simYears').addEventListener('input', updateScenario);
+  document.getElementById('simFx').addEventListener('input', updateScenario);
+  document.getElementById('simPop').addEventListener('input', updateScenario);
+  document.getElementById('gdpGrowth').addEventListener('input', updateStabilisation);
+  document.getElementById('primSurplus').addEventListener('input', updateStabilisation);
+  document.getElementById('intRate').addEventListener('input', updateStabilisation);
+  document.getElementById('langToggle').addEventListener('click', () => {
+    lang = lang === 'en' ? 'sw' : 'en';
+    alert(lang === 'sw' ? "Kiswahili tafsiri imerahisishwa. (demo)" : "English text only demo");
+  });
+
+  // start
+  initTheme();
+  fetchData().then(() => {
+    updateDisplay();
+    interval = setInterval(() => updateDisplay(), 100);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Kenya National Debt Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --black:#0a0a0a;--white:#fafaf8;--red:#c0142a;--red-light:#fce8ea;--red-mid:#f4b0b8;
+  --green:#1a6b3a;--green-light:#e4f2eb;--green-mid:#7bc49a;
+  --amber:#b85c00;--amber-light:#fef3e2;
+  --text:#111;--muted:#6b7280;--line:rgba(0,0,0,0.09);--surface:#fff;
+  --bg:#f5f4f0;--shadow:0 2px 12px rgba(0,0,0,0.06);
+  --r:12px;--r-lg:20px;--r-xl:28px;
+  --font-display:'Syne',sans-serif;--font-body:'Inter',sans-serif;--font-mono:'DM Mono',monospace;
+}
+@media(prefers-color-scheme:dark){
+  :root{--black:#f0ede8;--white:#0e0e0c;--text:#f0ede8;--muted:#8a8f98;--line:rgba(255,255,255,0.09);
+  --surface:#161614;--bg:#0e0e0c;--red:#e8455a;--red-light:#2a0d11;--red-mid:#5c1a22;
+  --green:#3dbd73;--green-light:#0d1f14;--green-mid:#1a4d2a;
+  --amber:#e07820;--amber-light:#1e1105;--shadow:0 2px 12px rgba(0,0,0,0.4);}
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;
+  line-height:1.6;overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 80% 40% at 20% 0%,rgba(192,20,42,0.04),transparent),
+             radial-gradient(ellipse 60% 50% at 80% 100%,rgba(26,107,58,0.04),transparent);
+}
+.page{width:min(1360px,calc(100% - 24px));margin:0 auto;padding:20px 0 60px;position:relative;z-index:1}
+
+/* TOP BAR */
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:14px 20px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-xl);box-shadow:var(--shadow);margin-bottom:16px;
+  position:sticky;top:10px;z-index:100;backdrop-filter:blur(20px);
+}
+.brand{display:flex;align-items:center;gap:12px}
+.flag{display:flex;width:36px;height:36px;border-radius:10px;overflow:hidden;border:1px solid var(--line);flex-shrink:0}
+.flag span{flex:1;display:block}
+.brand-text strong{font-family:var(--font-display);font-size:14px;font-weight:700;letter-spacing:.02em;display:block;line-height:1.2}
+.brand-text small{font-size:11px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn{
+  appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--text);
+  border-radius:99px;padding:8px 14px;font:inherit;font-size:13px;font-weight:600;
+  cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:all .15s ease;
+  white-space:nowrap;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:var(--shadow);border-color:rgba(0,0,0,0.18)}
+.btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+.btn.primary:hover{opacity:.9}
+.btn.ghost{background:transparent}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;animation:livepulse 1.8s ease-in-out infinite}
+.live-dot.paused{background:var(--amber);animation:none}
+@keyframes livepulse{0%,100%{box-shadow:0 0 0 0 rgba(26,107,58,.4)}50%{box-shadow:0 0 0 6px rgba(26,107,58,0)}}
+.spin-icon{width:13px;height:13px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:spin .8s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* NAV */
+.section-nav{
+  display:flex;gap:6px;padding:8px;background:var(--surface);border:1px solid var(--line);
+  border-radius:99px;margin-bottom:20px;overflow-x:auto;scrollbar-width:none;
+  box-shadow:var(--shadow);position:sticky;top:70px;z-index:90;
+}
+.section-nav::-webkit-scrollbar{display:none}
+.nav-chip{
+  appearance:none;border:none;background:transparent;color:var(--muted);border-radius:99px;
+  padding:7px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:all .15s ease;
+}
+.nav-chip:hover{background:var(--bg);color:var(--text)}
+.nav-chip.active{background:var(--red);color:#fff}
+
+/* GRID SYSTEM */
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.g1{grid-column:span 1}.g2{grid-column:span 2}.g3{grid-column:span 3}.g4{grid-column:span 4}
+.g5{grid-column:span 5}.g6{grid-column:span 6}.g7{grid-column:span 7}.g8{grid-column:span 8}
+.g9{grid-column:span 9}.g10{grid-column:span 10}.g12{grid-column:span 12}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px;box-shadow:var(--shadow);transition:all .18s ease}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.1);border-color:rgba(0,0,0,0.14)}
+.card-sm{padding:16px}
+.card-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-value{font-family:var(--font-display);font-size:2rem;font-weight:700;line-height:1;letter-spacing:-.03em;word-break:break-all}
+.card-detail{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+.band-t-red{border-top:3px solid var(--red)}
+.band-t-green{border-top:3px solid var(--green)}
+.band-t-black{border-top:3px solid var(--text)}
+
+/* HERO */
+.hero{
+  grid-column:span 12;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-xl);padding:36px 40px;box-shadow:var(--shadow);
+  position:relative;overflow:hidden;min-height:360px;
+}
+.hero::after{
+  content:'';position:absolute;right:-60px;top:-80px;width:400px;height:400px;
+  border-radius:50%;background:radial-gradient(circle,rgba(192,20,42,.06),transparent 70%);
+  pointer-events:none;
+}
+.hero-inner{display:grid;grid-template-columns:1.4fr 1fr;gap:28px;align-items:center;position:relative;z-index:1}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;margin-bottom:16px;padding:6px 12px;border:1px solid var(--line);border-radius:99px;background:var(--bg)}
+.hero h1{font-family:var(--font-display);font-size:clamp(2.2rem,4.5vw,4.2rem);font-weight:800;line-height:.96;letter-spacing:-.05em;margin-bottom:16px}
+.hero h1 em{font-style:normal;color:var(--red)}
+.hero-lead{color:var(--muted);font-size:.95rem;line-height:1.6;max-width:48ch;margin-bottom:24px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+.meta-panel{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;display:grid;gap:12px}
+.meta-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.meta-row:last-child{border:none;padding-bottom:0}
+.meta-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:4px}
+.meta-value{font-weight:600;font-size:.9rem;line-height:1.3}
+.status-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px}
+.status-badge.good{background:var(--green-light);color:var(--green)}
+.status-badge.warn{background:var(--amber-light);color:var(--amber)}
+.status-badge.bad{background:var(--red-light);color:var(--red)}
+.status-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* MAIN COUNTER */
+.counter-panel{grid-column:span 12;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-xl);padding:32px 36px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.counter-panel::before{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--black),var(--red),rgba(255,255,255,.3),var(--green));opacity:.7}
+.counter-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.counter-title{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700}
+.counter-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:end}
+.big-num{font-family:var(--font-display);font-size:clamp(1.8rem,4.5vw,4rem);font-weight:800;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums;word-break:break-all}
+.big-num.usd{color:var(--text)}
+.big-num.kes{color:var(--red)}
+.counter-sub{font-size:12px;color:var(--muted);margin-top:8px}
+.progress-wrap{margin-top:20px}
+.progress-track{height:4px;background:var(--line);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--green));border-radius:inherit;transition:width .1s linear}
+.progress-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+.ticker-row{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:var(--r);border:1px solid var(--line)}
+.ticker-badge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:99px;background:var(--red);color:#fff}
+.ticker-val{font-family:var(--font-mono);font-size:13px;color:var(--text)}
+
+/* METRIC CARDS */
+.metrics-row{grid-column:span 12;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.m-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;transition:all .18s;position:relative;overflow:hidden}
+.m-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.m-card .label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;margin-bottom:8px}
+.m-card .val{font-family:var(--font-display);font-size:1.5rem;font-weight:700;line-height:1.1;letter-spacing:-.03em}
+.m-card .sub{font-size:12px;color:var(--muted);margin-top:6px}
+.m-card .delta{position:absolute;top:14px;right:14px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px}
+.delta-up{background:var(--red-light);color:var(--red)}
+.delta-neutral{background:var(--green-light);color:var(--green)}
+.m-card .sparkbar{display:flex;align-items:flex-end;gap:2px;height:32px;margin-top:10px}
+.m-card .sparkbar span{flex:1;background:var(--line);border-radius:2px 2px 0 0;min-height:4px;transition:background .2s}
+.m-card .sparkbar span.hi{background:var(--red)}
+.m-card .sparkbar span.lo{background:var(--green)}
+
+/* ANALYSIS */
+.analysis-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.a-card{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:16px;border-top:2px solid var(--red)}
+.a-card .a-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:6px}
+.a-card .a-val{font-family:var(--font-display);font-size:1.2rem;font-weight:700;letter-spacing:-.02em;word-break:break-word;line-height:1.2}
+.a-card .a-sub{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+
+/* COMPARISON TABLE */
+.compare-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.cmp-card{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px}
+.cmp-country{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700}
+.cmp-flag{font-size:18px;line-height:1}
+.cmp-val{font-family:var(--font-display);font-size:1.35rem;font-weight:700;letter-spacing:-.02em}
+.cmp-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.cmp-bar-wrap{margin-top:4px}
+.cmp-bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.cmp-bar-fill{height:100%;border-radius:inherit;background:var(--red);transition:width 1s ease}
+.cmp-sub{font-size:12px;color:var(--muted)}
+
+/* CHARTS */
+.chart-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow)}
+.chart-title-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.chart-title{font-family:var(--font-display);font-size:1rem;font-weight:700;letter-spacing:-.01em}
+.chart-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.chart-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;font-size:12px}
+.chart-legend span{display:flex;align-items:center;gap:5px;color:var(--muted)}
+.chart-legend i{width:10px;height:10px;border-radius:2px;display:inline-block;flex-shrink:0}
+
+/* YEAR SELECT */
+.year-selector{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;padding:14px 16px;background:var(--bg);border-radius:var(--r);border:1px solid var(--line)}
+.year-selector label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.year-selector select{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;padding:7px 12px;font:inherit;font-size:13px}
+.year-selector .hint{margin-left:auto;font-size:12px;color:var(--muted)}
+
+/* PRESSURE SECTION */
+.pressure-track{height:16px;background:var(--line);border-radius:99px;overflow:hidden;position:relative}
+.pressure-fill{height:100%;border-radius:inherit;transition:width 1s ease;position:relative}
+.pressure-fill.low{background:linear-gradient(90deg,#1a6b3a,#3dbd73)}
+.pressure-fill.medium{background:linear-gradient(90deg,#b85c00,#f0a050)}
+.pressure-fill.high{background:linear-gradient(90deg,#c0142a,#e8455a)}
+.pressure-label-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+.severity-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700}
+.severity-low{background:var(--green-light);color:var(--green)}
+.severity-med{background:var(--amber-light);color:var(--amber)}
+.severity-high{background:var(--red-light);color:var(--red)}
+
+/* NEEDS GRID */
+.needs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.n-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow);border-top:2px solid var(--red)}
+.n-card .n-tag{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.n-tag-dot{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0}
+.n-card .n-title{font-family:var(--font-display);font-size:1.1rem;font-weight:700;margin-bottom:8px;letter-spacing:-.01em}
+.n-card .n-copy{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* LIFE SECTION */
+.life-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.l-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow);border-top:2px solid var(--green)}
+.l-flag-strip{display:flex;height:5px;border-radius:99px;overflow:hidden;margin-bottom:14px;border:1px solid var(--line)}
+.l-flag-strip span{flex:1;display:block}
+.l-flag-strip span:nth-child(1){background:#0a0a0a}
+.l-flag-strip span:nth-child(2){background:#c0142a}
+.l-flag-strip span:nth-child(3){background:#e8e8e0}
+.l-flag-strip span:nth-child(4){background:#1a6b3a}
+.l-title{font-family:var(--font-display);font-size:1rem;font-weight:700;margin-bottom:6px;letter-spacing:-.01em}
+.l-value{font-family:var(--font-display);font-size:1.35rem;font-weight:700;letter-spacing:-.02em;line-height:1.2;word-break:break-word;margin-bottom:6px}
+.l-copy{font-size:13px;color:var(--muted);line-height:1.55}
+
+/* HISTORY TIMELINE */
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-row{display:grid;grid-template-columns:60px 1fr 1fr 80px;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center;font-size:13px}
+.tl-row:last-child{border:none}
+.tl-year{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.tl-bar-wrap{position:relative;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.tl-bar{height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--red),rgba(192,20,42,.4));transition:width 1.2s ease}
+.tl-val{font-family:var(--font-mono);font-size:12px;text-align:right}
+.tl-pct{font-size:11px;text-align:right;font-weight:600}
+.tl-pct.up{color:var(--red)}
+.tl-pct.dn{color:var(--green)}
+.tl-head{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700}
+
+/* SCENARIO SIMULATOR */
+.sim-panel{grid-column:span 12;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-xl);padding:28px;box-shadow:var(--shadow)}
+.sim-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;align-items:start;margin-top:20px}
+.sim-control{display:flex;flex-direction:column;gap:8px}
+.sim-control label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:flex;justify-content:space-between}
+.sim-control label span{color:var(--text);font-family:var(--font-mono)}
+.sim-control input[type=range]{width:100%;accent-color:var(--red)}
+.sim-output{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:14px}
+.sim-out-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.sim-out-row:last-child{border:none;padding:0}
+.sim-out-label{font-size:12px;color:var(--muted)}
+.sim-out-val{font-family:var(--font-display);font-size:1.1rem;font-weight:700;letter-spacing:-.02em;text-align:right}
+.sim-description{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* ALERTS & MILESTONES */
+.milestones-list{display:flex;flex-direction:column;gap:8px}
+.milestone-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg);border-radius:var(--r);border:1px solid var(--line);transition:all .15s}
+.milestone-row:hover{border-color:var(--red);background:var(--red-light)}
+.milestone-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:700;font-family:var(--font-mono)}
+.milestone-icon.past{background:var(--green-light);color:var(--green)}
+.milestone-icon.future{background:var(--red-light);color:var(--red)}
+.milestone-row .m-label{font-size:13px;font-weight:600}
+.milestone-row .m-sub{font-size:12px;color:var(--muted)}
+.milestone-check{margin-left:auto;font-size:12px;font-weight:700;padding:3px 8px;border-radius:99px}
+.milestone-check.past{background:var(--green-light);color:var(--green)}
+.milestone-check.future{background:var(--red-light);color:var(--red)}
+
+/* FAQ ACCORDION */
+.faq-list{display:flex;flex-direction:column;gap:8px}
+.faq-item{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.faq-q{width:100%;text-align:left;padding:14px 16px;background:transparent;border:none;color:var(--text);font:inherit;font-size:14px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;transition:background .15s}
+.faq-q:hover{background:var(--bg)}
+.faq-q .arrow{font-size:16px;transition:transform .2s;color:var(--muted)}
+.faq-q.open .arrow{transform:rotate(180deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease;font-size:13px;color:var(--muted);line-height:1.7}
+.faq-a.open{max-height:300px}
+.faq-a-inner{padding:0 16px 14px}
+
+/* NEWS / SOURCES FEED */
+.sources-list{display:flex;flex-direction:column;gap:10px}
+.src-row{display:flex;gap:12px;padding:12px 14px;background:var(--bg);border-radius:var(--r);border:1px solid var(--line);align-items:flex-start}
+.src-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;background:var(--red-light);flex-shrink:0;font-weight:700;font-family:var(--font-mono);color:var(--red)}
+.src-content .src-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.src-content .src-meta{font-size:12px;color:var(--muted)}
+
+/* WARNING BOX */
+.warning-panel{grid-column:span 12;padding:16px 20px;border-radius:var(--r-lg);border:1px solid rgba(184,92,0,.3);background:var(--amber-light);display:none}
+.warning-panel.show{display:block}
+.warning-panel strong{font-size:14px;color:var(--amber);display:block;margin-bottom:6px}
+.warning-panel ul{color:var(--amber);font-size:13px;padding-left:18px;line-height:1.8;opacity:.85}
+
+/* NOTE PANEL */
+.note-panel{grid-column:span 12;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 24px;box-shadow:var(--shadow);border-left:3px solid var(--red)}
+.note-panel strong{display:block;margin-bottom:6px;font-size:.95rem}
+.note-panel p{font-size:13px;color:var(--muted);line-height:1.7;max-width:80ch}
+
+/* SECTION HEADERS */
+.section-hdr{grid-column:span 12;display:flex;justify-content:space-between;align-items:center;gap:16px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.section-hdr-title{font-family:var(--font-display);font-size:1.4rem;font-weight:700;letter-spacing:-.03em}
+.section-hdr-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.section-hdr-right{font-size:12px;color:var(--muted);text-align:right}
+
+/* FOOTER */
+.foot{margin-top:20px;padding:16px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.foot a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line)}
+.foot a:hover{color:var(--text)}
+
+/* KENYA STRIPE */
+.ke-stripe{display:flex;height:4px;border-radius:99px;overflow:hidden;border:1px solid var(--line);gap:0}
+.ke-stripe span:nth-child(1){flex:1;background:#0a0a0a}
+.ke-stripe span:nth-child(2){flex:1;background:#c0142a}
+.ke-stripe span:nth-child(3){flex:1;background:#e8e8e0}
+.ke-stripe span:nth-child(4){flex:1;background:#1a6b3a}
+
+/* SHARE PANEL */
+.share-panel{position:fixed;bottom:20px;right:20px;z-index:200;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-xl);padding:12px 16px;box-shadow:0 8px 24px rgba(0,0,0,.15);display:flex;gap:8px;align-items:center;transition:all .2s}
+.share-panel:hover{box-shadow:0 12px 32px rgba(0,0,0,.2)}
+.share-panel span{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.share-btn{appearance:none;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.share-btn:hover{background:var(--red);color:#fff;border-color:var(--red)}
+
+/* DONATE BUTTON */
+.btn-donate{
+  background:linear-gradient(135deg,#1a6b3a,#0f4a28);color:#fff;border:none;
+  border-radius:99px;padding:9px 18px;font:inherit;font-size:13px;font-weight:700;
+  cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .18s ease;
+  white-space:nowrap;letter-spacing:.01em;box-shadow:0 2px 10px rgba(26,107,58,.35);
+  text-decoration:none;
+}
+.btn-donate:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(26,107,58,.45);opacity:.93}
+.btn-donate .heart{font-size:15px;animation:heartbeat 1.4s ease-in-out infinite}
+@keyframes heartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}
+
+/* DONATE BANNER */
+.donate-banner{
+  grid-column:span 12;border:1px solid rgba(26,107,58,.22);border-radius:var(--r-lg);
+  padding:18px 22px;background:var(--green-light);display:flex;align-items:center;
+  justify-content:space-between;gap:16px;flex-wrap:wrap;
+}
+.donate-banner .db-text strong{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--green);display:block;margin-bottom:3px}
+.donate-banner .db-text span{font-size:13px;color:var(--muted);line-height:1.5}
+.donate-banner-inline{
+  padding:14px 18px;border-radius:var(--r);border:1px dashed rgba(26,107,58,.3);
+  background:var(--green-light);display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;margin-top:14px;
+}
+.donate-banner-inline span{font-size:13px;color:var(--green);font-weight:600}
+
+/* STICKY DONATE BAR (below topbar) */
+.donate-topstrip{
+  background:linear-gradient(90deg,var(--green),#0f4a28);color:#fff;
+  padding:9px 20px;border-radius:var(--r-lg);margin-bottom:12px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  box-shadow:0 2px 10px rgba(26,107,58,.25);
+}
+.donate-topstrip span{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.donate-topstrip a{
+  background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.3);
+  border-radius:99px;padding:7px 16px;font:inherit;font-size:13px;font-weight:700;
+  cursor:pointer;text-decoration:none;transition:all .15s;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:7px;
+}
+.donate-topstrip a:hover{background:rgba(255,255,255,.28)}
+
+/* UPGRADED FLOATING PANEL */
+.share-panel{
+  position:fixed;bottom:20px;right:20px;z-index:200;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r-xl);padding:14px 16px;
+  box-shadow:0 8px 28px rgba(0,0,0,.16);display:flex;flex-direction:column;gap:10px;
+  min-width:200px;transition:all .2s;
+}
+.share-panel-title{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;margin-bottom:2px}
+.share-panel .donate-float{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:linear-gradient(135deg,#1a6b3a,#0f4a28);color:#fff;
+  border-radius:10px;padding:11px 14px;font:inherit;font-size:14px;font-weight:700;
+  text-decoration:none;transition:all .15s;letter-spacing:.01em;
+}
+.share-panel .donate-float:hover{opacity:.9;transform:translateY(-1px)}
+.share-panel .donate-float .heart{animation:heartbeat 1.4s ease-in-out infinite;font-size:16px}
+.share-btn-row{display:flex;gap:7px}
+
+/* FOOTER DONATE */
+.foot-donate{
+  margin-top:20px;padding:22px 28px;background:var(--green-light);
+  border:1px solid rgba(26,107,58,.2);border-radius:var(--r-xl);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+}
+.foot-donate .fd-text{max-width:55ch}
+.foot-donate .fd-text strong{font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--green);display:block;margin-bottom:4px}
+.foot-donate .fd-text p{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* SCROLL TRANSITIONS */
+[data-reveal]{opacity:0;transform:translateY(16px);transition:opacity .5s ease,transform .5s ease}
+[data-reveal].visible{opacity:1;transform:none}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .hero-inner{grid-template-columns:1fr}
+  .metrics-row{grid-template-columns:repeat(2,1fr)}
+  .analysis-grid{grid-template-columns:repeat(2,1fr)}
+  .compare-grid{grid-template-columns:1fr}
+  .sim-grid{grid-template-columns:1fr}
+  .needs-grid,.life-grid{grid-template-columns:1fr}
+  .counter-grid{grid-template-columns:1fr}
+  .tl-row{grid-template-columns:50px 1fr 80px;gap:8px}
+  .tl-row .tl-pct{display:none}
+}
+@media(max-width:600px){
+  .topbar{padding:10px 14px}
+  .hero{padding:22px}
+  .counter-panel{padding:22px 20px}
+  .metrics-row{grid-template-columns:1fr}
+  .analysis-grid{grid-template-columns:1fr}
+  .share-panel{bottom:12px;right:12px}
+  .section-nav{top:64px}
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<!-- TOPBAR -->
+<div class="topbar" role="banner">
+  <div class="brand">
+    <div class="flag" aria-hidden="true">
+      <span style="background:#0a0a0a"></span>
+      <span style="background:#c0142a"></span>
+      <span style="background:#1a6b3a"></span>
+    </div>
+    <div class="brand-text">
+      <strong id="brandTitle">Kenya Debt Monitor</strong>
+      <small id="brandSub">Official data · Live simulation</small>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button id="langBtn" class="btn ghost" type="button">🌐 <span id="langLabel">EN / SW</span></button>
+    <button id="liveBtn" class="btn ghost" type="button"><span class="live-dot" id="liveDot"></span><span id="liveBtnLabel">Pause live</span></button>
+    <a href="https://paystack.shop/pay/pghjfghn16" target="_blank" rel="noopener" class="btn-donate" aria-label="Support this project with a donation"><span class="heart">💚</span> Support</a>
+    <button id="refreshBtn" class="btn primary" type="button"><span id="refreshInner">↻ Refresh</span></button>
+  </div>
+</div>
+
+<!-- SECTION NAV -->
+<div class="donate-topstrip" role="complementary" aria-label="Support this project">
+  <span>💚 This monitor is free &amp; open. If it's useful, consider supporting its upkeep.</span>
+  <a href="https://paystack.shop/pay/pghjfghn16" target="_blank" rel="noopener">Donate via Paystack ↗</a>
+</div>
+<nav class="section-nav" aria-label="Page sections">
+  <button class="nav-chip active" data-target="hero">Overview</button>
+  <button class="nav-chip" data-target="counter-panel">Counter</button>
+  <button class="nav-chip" data-target="metrics-row">Metrics</button>
+  <button class="nav-chip" data-target="analysis-panel">Analysis</button>
+  <button class="nav-chip" data-target="simulator-panel">Simulator</button>
+  <button class="nav-chip" data-target="charts-panel">Charts</button>
+  <button class="nav-chip" data-target="timeline-panel">History</button>
+  <button class="nav-chip" data-target="compare-panel">Compare</button>
+  <button class="nav-chip" data-target="pressure-panel">Pressure</button>
+  <button class="nav-chip" data-target="life-panel">Household</button>
+  <button class="nav-chip" data-target="milestone-panel">Milestones</button>
+  <button class="nav-chip" data-target="faq-panel">FAQ</button>
+</nav>
+
+<!-- MAIN GRID -->
+<div class="grid" style="row-gap:20px">
+
+<!-- HERO -->
+<section id="hero" class="hero g12" data-nav-section data-reveal>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow"><span class="live-dot" style="animation-delay:.3s"></span> <span id="heroEyebrow">Live · World Bank data · Nairobi time</span></div>
+      <h1 id="heroTitle">Kenya's <em>national debt,</em><br/>live in real-time.</h1>
+      <p class="hero-lead" id="heroLead">The counter uses official World Bank figures as its anchor, a live USD/KES exchange rate, and a 12% annual growth assumption to simulate the debt moving every tenth of a second.</p>
+      <div class="hero-actions">
+        <button class="btn primary" onclick="scrollTo('counter-panel')">View live counter ↓</button>
+        <button class="btn ghost" onclick="scrollTo('simulator-panel')">Run scenarios</button>
+        <a href="https://paystack.shop/pay/pghjfghn16" target="_blank" rel="noopener" class="btn-donate"><span class="heart">💚</span> Support this project</a>
+        <button class="btn ghost" onclick="scrollTo('faq-panel')">FAQ</button>
+      </div>
+    </div>
+    <div class="meta-panel" aria-live="polite">
+      <div class="meta-row">
+        <div><div class="meta-label">Status</div><div id="dataStatus" class="meta-value"><span class="status-badge warn">Loading…</span></div></div>
+        <div><div class="meta-label">Updated</div><div id="lastFetch" class="meta-value" style="font-size:12px;font-family:var(--font-mono)">—</div></div>
+      </div>
+      <div class="meta-row">
+        <div><div class="meta-label">Anchor year</div><div id="officialYear" class="meta-value">—</div></div>
+        <div><div class="meta-label">FX rate</div><div id="fxRate" class="meta-value" style="font-family:var(--font-mono);font-size:13px">—</div></div>
+      </div>
+      <div class="meta-row">
+        <div><div class="meta-label">GDP ratio</div><div id="heroGdp" class="meta-value">~70%</div></div>
+        <div><div class="meta-label">Per capita (KSh)</div><div id="heroPerCap" class="meta-value" style="font-family:var(--font-mono);font-size:13px">—</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COUNTER -->
+<section id="counter-panel" class="counter-panel g12" data-nav-section data-reveal>
+  <div class="counter-head">
+    <div>
+      <div class="counter-title" id="counterLabel">Live debt counter</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px" id="counterBadge">Simulated from official anchor · grows every 0.1 seconds</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="status-badge warn" id="growthTag">12% annual growth</span>
+      <span style="font-size:12px;color:var(--muted)" id="secsSince">—</span>
+    </div>
+  </div>
+  <div class="counter-grid">
+    <div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;margin-bottom:6px">US Dollars</div>
+      <div id="usdCounter" class="big-num usd">$0</div>
+      <div class="counter-sub" id="usdSubLabel">Based on World Bank DT.DOD.DECT.CD</div>
+    </div>
+    <div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;margin-bottom:6px">Kenyan Shillings</div>
+      <div id="kesCounter" class="big-num kes">KSh 0</div>
+      <div class="counter-sub" id="kesSubLabel">Real-time USD/KES conversion</div>
+    </div>
+  </div>
+  <div class="ticker-row">
+    <span class="ticker-badge">Per second</span>
+    <span class="ticker-val" id="perSecTicker">Calculating…</span>
+    <span style="margin-left:auto;font-size:12px;color:var(--muted)" id="perMinTicker">—</span>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-track"><div id="secondProgress" class="progress-fill"></div></div>
+    <div class="progress-row"><span>0s</span><span>Updates every 100ms · counter changes on whole seconds</span><span>1s</span></div>
+  </div>
+  <div class="donate-banner-inline" style="margin-top:16px">
+    <span>💚 Find this counter useful? Help keep it running.</span>
+    <a href="https://paystack.shop/pay/pghjfghn16" target="_blank" rel="noopener" class="btn-donate" style="padding:8px 16px;font-size:12px">Donate via Paystack ↗</a>
+  </div>
+</section>
+
+<!-- METRICS ROW -->
+<div class="metrics-row g12" id="metrics-row" data-nav-section>
+  <div class="m-card band-t-red">
+    <div class="label" id="m1Label">Debt per citizen</div>
+    <div class="val" id="m1Val">—</div>
+    <div class="sub" id="m1Sub">Population ~55M</div>
+    <div class="delta delta-up">↑ Growing</div>
+  </div>
+  <div class="m-card band-t-red">
+    <div class="label" id="m2Label">Debt-to-GDP</div>
+    <div class="val" id="m2Val">—%</div>
+    <div class="sub" id="m2Sub">World Bank GDP base</div>
+    <div class="delta delta-up" id="m2Delta">↑ High</div>
+  </div>
+  <div class="m-card band-t-black">
+    <div class="label" id="m3Label">Daily increase</div>
+    <div class="val" id="m3Val">—</div>
+    <div class="sub" id="m3Sub">USD at 12% annual rate</div>
+  </div>
+  <div class="m-card band-t-green">
+    <div class="label" id="m4Label">Annual increase</div>
+    <div class="val" id="m4Val">—</div>
+    <div class="sub" id="m4Sub">Simulated yearly addition</div>
+  </div>
+</div>
+
+<!-- ANALYSIS -->
+<div class="g12" id="analysis-panel" data-nav-section data-reveal>
+  <div class="section-hdr">
+    <div>
+      <div class="section-hdr-title" id="analysisTitle">Figure analysis</div>
+      <div class="section-hdr-sub" id="analysisSub">Context and implications of Kenya's debt position</div>
+    </div>
+  </div>
+  <div class="analysis-grid">
+    <div class="a-card">
+      <div class="a-label" id="aLbl1">Daily growth (KSh)</div>
+      <div class="a-val" id="aVal1">—</div>
+      <div class="a-sub" id="aSub1">Added every 24 hours at current rate</div>
+    </div>
+    <div class="a-card">
+      <div class="a-label" id="aLbl2">Annual growth (USD)</div>
+      <div class="a-val" id="aVal2">—</div>
+      <div class="a-sub" id="aSub2">Estimated new debt per year</div>
+    </div>
+    <div class="a-card">
+      <div class="a-label" id="aLbl3">Citizen burden (KSh)</div>
+      <div class="a-val" id="aVal3">—</div>
+      <div class="a-sub" id="aSub3">Each person's notional share</div>
+    </div>
+    <div class="a-card">
+      <div class="a-label" id="aLbl4">Risk interpretation</div>
+      <div class="a-val" id="aVal4">Moderate</div>
+      <div class="a-sub" id="aSub4">Based on debt-to-GDP ratio</div>
+    </div>
+  </div>
+  <div style="margin-top:14px;padding:14px 16px;background:var(--bg);border-radius:var(--r);border:1px solid var(--line);font-size:13px;color:var(--muted);line-height:1.7" id="analysisNote">
+    Kenya's debt is anchored to the official World Bank series. Simulated growth uses a 12% annual rate compounded continuously. All KSh figures use a live USD/KES rate.
+  </div>
+  <div class="ke-stripe" style="margin-top:12px"><span></span><span></span><span></span><span></span></div>
+</div>
+
+<!-- DONATE BANNER 1 -->
+<div class="donate-banner g12" role="complementary">
+  <div class="db-text">
+    <strong>This tool is free — and it takes real work to maintain.</strong>
+    <span>Server costs, data API subscriptions, and development time are covered by generous supporters like you.</span>
+  </div>
+  <a href="https://paystack.shop/pay/pghjfghn16" target="_blank" rel="noopener" class="btn-donate"><span class="heart">💚</span> Make a donation</a>
+</div>
+
+<!-- SIMULATOR -->
+<section class="sim-panel g12" id="simulator-panel" data-nav-section data-reveal>
+  <div class="section-hdr" style="border:none;padding:0;margin:0">
+    <div>
+      <div class="section-hdr-title" id="simTitle">Debt scenario simulator</div>
+      <div class="section-hdr-sub" id="simSub">Adjust the dials and see what different growth rates, FX rates, and populations imply</div>
+    </div>
+    <span class="status-badge warn">Interactive</span>
+  </div>
+  <div class="sim-grid">
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <div class="sim-control">
+        <label>Annual growth rate <span id="simRateDisplay">12%</span></label>
+        <input type="range" id="simRate" min="0" max="30" step="0.5" value="12">
+      </div>
+      <div class="sim-control">
+        <label>Years ahead <span id="simYearsDisplay">5</span></label>
+        <input type="range" id="simYears" min="1" max="20" step="1" value="5">
+      </div>
+      <div class="sim-control">
+        <label>USD/KES rate <span id="simFXDisplay">—</span></label>
+        <input type="range" id="simFX" min="100" max="250" step="1" value="129">
+      </div>
+      <div class="sim-control">
+        <label>Population (M) <span id="simPopDisplay">55M</span></label>
+        <input type="range" id="simPop" min="40" max="80" step="1" value="55">
+      </div>
+    </div>
+    <div class="sim-output">
+      <div class="sim-out-row">
+        <div class="sim-out-label" id="simLbl1">Debt in USD after</div>
+        <div class="sim-out-val" id="simVal1">—</div>
+      </div>
+      <div class="sim-out-row">
+        <div class="sim-out-label" id="simLbl2">Debt in KSh after</div>
+        <div class="sim-out-val" id="simVal2">—</div>
+      </div>
+      <div class="sim-out-row">
+        <div class="sim-out-label" id="simLbl3">Per citizen USD</div>
+        <div class="sim-out-val" id="simVal3">—</div>
+      </div>
+      <div class="sim-out-row">
+        <div class="sim-out-label" id="simLbl4">Debt-to-GDP (est)</div>
+        <div class="sim-out-val" id="simVal4">—</div>
+      </div>
+      <div class="sim-out-row">
+        <div class="sim-out-label">Risk level</div>
+        <div class="sim-out-val"><span id="simRisk" class="severity-pill severity-med">Moderate</span></div>
+      </div>
+    </div>
+    <div>
+      <div style="position:relative;width:100%;height:200px;margin-bottom:10px">
+        <canvas id="simChart" role="img" aria-label="Scenario projection chart"></canvas>
+      </div>
+      <div class="sim-description" id="simDesc">Adjust the sliders to explore different scenarios. The chart shows the projected debt trajectory.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CHARTS -->
+<section class="g12" id="charts-panel" data-nav-section data-reveal>
+  <div class="section-hdr">
+    <div>
+      <div class="section-hdr-title" id="chartsTitle">Historical debt charts</div>
+      <div class="section-hdr-sub" id="chartsSub">World Bank official series · hover to inspect</div>
+    </div>
+    <div class="year-selector" style="margin:0;padding:8px 12px">
+      <label for="yearSelect" id="yearSelLabel">Focus year</label>
+      <select id="yearSelect"></select>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="chart-card">
+      <div class="chart-title-row">
+        <div><div class="chart-title" id="debtChartTitle">Total external debt (USD)</div><div class="chart-sub">World Bank DT.DOD.DECT.CD</div></div>
+      </div>
+      <div style="position:relative;width:100%;height:280px">
+        <canvas id="debtTrendChart" role="img" aria-label="Kenya external debt trend chart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title-row">
+        <div><div class="chart-title" id="gdpChartTitle">Debt-to-GDP ratio (%)</div><div class="chart-sub">External debt as % of GDP</div></div>
+      </div>
+      <div style="position:relative;width:100%;height:280px">
+        <canvas id="gdpTrendChart" role="img" aria-label="Kenya debt to GDP ratio chart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+    <div class="chart-card">
+      <div class="chart-title-row">
+        <div><div class="chart-title" id="growthChartTitle">Year-on-year debt growth (%)</div><div class="chart-sub">Annual percentage change</div></div>
+      </div>
+      <div style="position:relative;width:100%;height:200px">
+        <canvas id="growthChart" role="img" aria-label="Annual debt growth rate chart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title-row">
+        <div><div class="chart-title" id="perCapChartTitle">Debt per capita over time (USD)</div><div class="chart-sub">Estimated from population data</div></div>
+      </div>
+      <div style="position:relative;width:100%;height:200px">
+        <canvas id="perCapChart" role="img" aria-label="Debt per capita chart"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DONATE BANNER 2 -->
+<div class="donate-banner g12" role="complementary">
+  <div class="db-text">
+    <strong>Help us keep the lights on 🇰🇪</strong>
+    <span>Every contribution — big or small — keeps this public interest tool free and accurate for all Kenyans.</span>
+  </div>
+  <a href="https://paystack.shop/pay/pghjfghn16" target="_blank" rel="noopener" class="btn-donate"><span class="heart">💚</span> Support via Paystack</a>
+</div>
+
+<!-- TIMELINE / HISTORY TABLE -->
+<section class="g12 card" id="timeline-panel" data-nav-section data-reveal>
+  <div class="section-hdr" style="margin-bottom:16px">
+    <div><div class="section-hdr-title" id="timelineTitle">Debt history table</div><div class="section-hdr-sub" id="timelineSub">World Bank series year by year</div></div>
+    <div class="section-hdr-right" id="timelineNote">USD billions</div>
+  </div>
+  <div class="tl-row" style="padding-bottom:8px">
+    <div class="tl-head">Year</div><div class="tl-head">Proportion</div><div class="tl-head" style="text-align:right">Amount (USD)</div><div class="tl-head" style="text-align:right">YoY %</div>
+  </div>
+  <div id="timelineBody" class="timeline"></div>
+</section>
+
+<!-- COUNTRY COMPARISON -->
+<section class="g12" id="compare-panel" data-nav-section data-reveal>
+  <div class="section-hdr">
+    <div><div class="section-hdr-title" id="compareTitle">Regional debt comparison</div><div class="section-hdr-sub" id="compareSub">How Kenya compares to East African peers (approx. figures)</div></div>
+  </div>
+  <div class="compare-grid">
+    <div class="cmp-card band-t-red">
+      <div class="cmp-country"><span class="cmp-flag">🇰🇪</span> <span>Kenya</span></div>
+      <div class="cmp-label">External debt (USD)</div>
+      <div class="cmp-val" id="cmpKeVal">—</div>
+      <div class="cmp-bar-wrap"><div class="cmp-bar"><div class="cmp-bar-fill" id="cmpKeBar" style="width:100%"></div></div></div>
+      <div class="cmp-sub" id="cmpKeSub">Live simulated figure</div>
+    </div>
+    <div class="cmp-card band-t-black">
+      <div class="cmp-country"><span class="cmp-flag">🇹🇿</span> <span>Tanzania</span></div>
+      <div class="cmp-label">External debt (USD)</div>
+      <div class="cmp-val">~$26 billion</div>
+      <div class="cmp-bar-wrap"><div class="cmp-bar"><div class="cmp-bar-fill" id="cmpTzBar" style="background:var(--muted)"></div></div></div>
+      <div class="cmp-sub">World Bank 2022 est.</div>
+    </div>
+    <div class="cmp-card band-t-green">
+      <div class="cmp-country"><span class="cmp-flag">🇺🇬</span> <span>Uganda</span></div>
+      <div class="cmp-label">External debt (USD)</div>
+      <div class="cmp-val">~$22 billion</div>
+      <div class="cmp-bar-wrap"><div class="cmp-bar"><div class="cmp-bar-fill" id="cmpUgBar" style="background:var(--green)"></div></div></div>
+      <div class="cmp-sub">World Bank 2022 est.</div>
+    </div>
+    <div class="cmp-card band-t-black">
+      <div class="cmp-country"><span class="cmp-flag">🇷🇼</span> <span>Rwanda</span></div>
+      <div class="cmp-label">External debt (USD)</div>
+      <div class="cmp-val">~$8 billion</div>
+      <div class="cmp-bar-wrap"><div class="cmp-bar"><div class="cmp-bar-fill" id="cmpRwBar" style="background:var(--muted)"></div></div></div>
+      <div class="cmp-sub">World Bank 2022 est.</div>
+    </div>
+    <div class="cmp-card band-t-black">
+      <div class="cmp-country"><span class="cmp-flag">🇪🇹</span> <span>Ethiopia</span></div>
+      <div class="cmp-label">External debt (USD)</div>
+      <div class="cmp-val">~$28 billion</div>
+      <div class="cmp-bar-wrap"><div class="cmp-bar"><div class="cmp-bar-fill" id="cmpEtBar" style="background:var(--muted)"></div></div></div>
+      <div class="cmp-sub">World Bank 2022 est.</div>
+    </div>
+    <div class="cmp-card band-t-black">
+      <div class="cmp-country"><span class="cmp-flag">🌍</span> <span>Sub-Saharan avg</span></div>
+      <div class="cmp-label">Debt-to-GDP average</div>
+      <div class="cmp-val">~58%</div>
+      <div class="cmp-bar-wrap"><div class="cmp-bar"><div class="cmp-bar-fill" style="width:58%;background:var(--amber)"></div></div></div>
+      <div class="cmp-sub">IMF Regional Economic Outlook</div>
+    </div>
+  </div>
+</section>
+
+<!-- PRESSURE -->
+<section class="g12 card" id="pressure-panel" data-nav-section data-reveal>
+  <div class="section-hdr">
+    <div><div class="section-hdr-title" id="pressureTitle">Fiscal pressure gauge</div><div class="section-hdr-sub" id="pressureSub">Real-time assessment from live data</div></div>
+    <span id="pressurePill" class="severity-pill severity-med">Moderate</span>
+  </div>
+  <div style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="font-size:13px;font-weight:600" id="pressureDesc">Debt-to-GDP ratio pressure</span>
+      <span style="font-family:var(--font-mono);font-size:14px;font-weight:600" id="pressurePct">—</span>
+    </div>
+    <div class="pressure-track"><div id="pressureFill" class="pressure-fill medium" style="width:0%"></div></div>
+    <div class="pressure-label-row"><span>0% — No concern</span><span>55% — Watch</span><span>75% — High</span><span>90%+ — Danger</span></div>
+  </div>
+  <div style="margin-top:20px" class="needs-grid">
+    <div class="n-card">
+      <div class="n-tag"><span class="n-tag-dot"></span> <span id="nd1Tag">Debt servicing</span></div>
+      <div class="n-title" id="nd1Title">Interest eats revenue</div>
+      <div class="n-copy" id="nd1Copy">A large share of Kenya's annual budget goes to servicing existing debt, limiting investment in schools, hospitals, and infrastructure.</div>
+    </div>
+    <div class="n-card">
+      <div class="n-tag"><span class="n-tag-dot"></span> <span id="nd2Tag">Currency risk</span></div>
+      <div class="n-title" id="nd2Title">KSh depreciation amplifies</div>
+      <div class="n-copy" id="nd2Copy">Most external debt is denominated in USD or EUR. When the shilling weakens, the KSh value of debt rises automatically, creating pressure even without new borrowing.</div>
+    </div>
+    <div class="n-card">
+      <div class="n-tag"><span class="n-tag-dot"></span> <span id="nd3Tag">Action needed</span></div>
+      <div class="n-title" id="nd3Title" style="font-size:1.05rem">What must happen</div>
+      <div class="n-copy" id="nd3Copy">Revenue collection improvement, spending efficiency, and export-led GDP growth are the fastest paths to reducing the debt-to-GDP ratio sustainably.</div>
+    </div>
+  </div>
+</section>
+
+<!-- DONATE BANNER 3 -->
+<div class="donate-banner g12" role="complementary">
+  <div class="db-text">
+    <strong>Awareness is the first step to accountability.</strong>
+    <span>Support this monitor so more Kenyans can stay informed about how public debt affects their everyday lives.</span>
+  </div>
+  <a href="https://paystack.shop/pay/pghjfghn16" target="_blank" rel="noopener" class="btn-donate"><span class="heart">💚</span> Donate now</a>
+</div>
+
+<!-- HOUSEHOLD / LIFE SECTION -->
+<section class="g12" id="life-panel" data-nav-section data-reveal>
+  <div class="section-hdr">
+    <div><div class="section-hdr-title" id="lifeTitle">What it means for Kenyans</div><div class="section-hdr-sub" id="lifeSub">Translating national figures to household level</div></div>
+  </div>
+  <div class="life-grid">
+    <div class="l-card">
+      <div class="l-flag-strip"><span></span><span></span><span></span><span></span></div>
+      <div class="l-title" id="l1Title">Family of four share</div>
+      <div class="l-value" id="l1Val">—</div>
+      <div class="l-copy" id="l1Copy">If Kenya's debt were divided equally among all households of four, this is each family's share at the current exchange rate.</div>
+    </div>
+    <div class="l-card">
+      <div class="l-flag-strip"><span></span><span></span><span></span><span></span></div>
+      <div class="l-title" id="l2Title">Monthly debt growth</div>
+      <div class="l-value" id="l2Val">—</div>
+      <div class="l-copy" id="l2Copy">The debt is growing by this amount every 30 days, roughly equivalent to building a small public school every month.</div>
+    </div>
+    <div class="l-card">
+      <div class="l-flag-strip"><span></span><span></span><span></span><span></span></div>
+      <div class="l-title" id="l3Title">What one year costs</div>
+      <div class="l-value" id="l3Val">—</div>
+      <div class="l-copy" id="l3Copy">The annual growth in debt at 12%. This could alternatively fund millions of health insurance enrollments or thousands of school builds.</div>
+    </div>
+  </div>
+</section>
+
+<!-- MILESTONES -->
+<section class="g12 card" id="milestone-panel" data-nav-section data-reveal>
+  <div class="section-hdr">
+    <div><div class="section-hdr-title" id="msTitle">Debt milestones</div><div class="section-hdr-sub" id="msSub">Key thresholds — past and projected</div></div>
+  </div>
+  <div class="milestones-list" id="milestonesList"></div>
+</section>
+
+<!-- DONATE BANNER 4 -->
+<div class="donate-banner g12" role="complementary">
+  <div class="db-text">
+    <strong>Built by Kenyans, for Kenyans.</strong>
+    <span>Your donation directly funds this public interest transparency tool. No ads, no paywalls, no corporate backing.</span>
+  </div>
+  <a href="https://paystack.shop/pay/pghjfghn16" target="_blank" rel="noopener" class="btn-donate"><span class="heart">💚</span> Chip in via Paystack</a>
+</div>
+
+<!-- FAQ -->
+<section class="g12 card" id="faq-panel" data-nav-section data-reveal>
+  <div class="section-hdr">
+    <div><div class="section-hdr-title">FAQ</div><div class="section-hdr-sub">Common questions about Kenya's debt</div></div>
+  </div>
+  <div class="faq-list" id="faqList"></div>
+</section>
+
+<!-- SOURCES -->
+<section class="g12 card" id="sources-panel" data-reveal>
+  <div class="section-hdr">
+    <div><div class="section-hdr-title">Data sources</div><div class="section-hdr-sub">Everything powering this monitor</div></div>
+  </div>
+  <div class="sources-list">
+    <div class="src-row"><div class="src-icon">WB</div><div class="src-content"><div class="src-title">World Bank Open Data — DT.DOD.DECT.CD</div><div class="src-meta">External debt stocks, total (DOD, current US$) · api.worldbank.org</div></div></div>
+    <div class="src-row"><div class="src-icon">WB</div><div class="src-content"><div class="src-title">World Bank Open Data — NY.GDP.MKTP.CD</div><div class="src-meta">GDP (current US$) · api.worldbank.org</div></div></div>
+    <div class="src-row"><div class="src-icon">FX</div><div class="src-content"><div class="src-title">ExchangeRate-API — USD/KES</div><div class="src-meta">Live foreign exchange rate · api.exchangerate-api.com</div></div></div>
+    <div class="src-row"><div class="src-icon">K</div><div class="src-content"><div class="src-title">Kenya National Bureau of Statistics</div><div class="src-meta">Population and demographic context · knbs.or.ke</div></div></div>
+  </div>
+</section>
+
+<!-- WARNINGS -->
+<div id="warningPanel" class="warning-panel g12">
+  <strong id="warnTitle">Source warning</strong>
+  <ul id="warnList"></ul>
+</div>
+
+<!-- NOTE -->
+<div class="note-panel g12" id="note-panel" data-nav-section>
+  <strong id="noteTitle">Important note</strong>
+  <p id="noteCopy">This counter is a simulation. The base figure is the official World Bank external debt stock for Kenya. The live counter then applies a 12% annual growth rate (compounded continuously) from the moment the data was loaded, updating every 100 milliseconds. Exchange rates use a live API. This is not an official government or IMF figure — it is an educational tool to illustrate debt dynamics.</p>
+</div>
+
+</div><!-- end grid -->
+
+<div class="foot-donate" role="complementary">
+  <div class="fd-text">
+    <strong>Keep this monitor free for everyone 💚</strong>
+    <p>This is a public interest transparency tool built and maintained independently. It has no ads, no paywalls, and no corporate backing. If it's helped you understand Kenya's debt situation, please consider a small donation to keep it running and improving.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
+    <a href="https://paystack.shop/pay/pghjfghn16" target="_blank" rel="noopener" class="btn-donate" style="font-size:15px;padding:13px 24px">
+      <span class="heart">💚</span> Donate via Paystack
+    </a>
+    <span style="font-size:12px;color:var(--muted)">Secure · Any amount · KES / card accepted</span>
+  </div>
+</div>
+
+<div class="foot">
+  <span id="footCopy">Built with vanilla HTML, CSS, and JavaScript · Data from World Bank Open Data &amp; ExchangeRate-API</span>
+  <span>Made for public interest · Not affiliated with GoK · <a href="https://paystack.shop/pay/pghjfghn16" target="_blank" rel="noopener" style="color:var(--green);font-weight:700">Support this project ↗</a></span>
+</div>
+
+</div><!-- end page -->
+
+<!-- FLOATING ACTION PANEL -->
+<div class="share-panel" role="complementary" aria-label="Support and share">
+  <div class="share-panel-title">Support &amp; Share</div>
+  <a href="https://paystack.shop/pay/pghjfghn16" target="_blank" rel="noopener" class="donate-float" aria-label="Donate to support this project">
+    <span class="heart">💚</span> Donate via Paystack
+  </a>
+  <div class="share-btn-row">
+    <button class="share-btn" onclick="copyPageUrl()" style="flex:1">🔗 Link</button>
+    <button class="share-btn" onclick="copyDebtFigure()" style="flex:1">📋 Figure</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(() => {
+const POP = 55_000_000;
+const GROWTH_RATE = 0.12;
+const SEC_PER_YEAR = 365.2425 * 86400;
+const FALLBACK_DEBT = 80_000_000_000;
+const FALLBACK_FX = 129.0;
+const CACHE_KEY = 'ke_debt_v2';
+
+let S = {
+  debtBase: FALLBACK_DEBT,
+  debtYear: null,
+  debtTs: Date.now(),
+  fx: FALLBACK_FX,
+  fxTs: Date.now(),
+  gdpUsd: null,
+  gdpYear: null,
+  debtSeries: [],
+  gdpSeries: [],
+  focusYear: null,
+  lang: 'en',
+  paused: false,
+  warnings: [],
+  usingFallback: true
+};
+
+let tickId = null;
+let lastSec = null;
+let refreshLock = false;
+let charts = {};
+
+const growthPerSec = Math.pow(1 + GROWTH_RATE, 1 / SEC_PER_YEAR);
+const fmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+
+function formatUsd(v) { return '$' + fmt.format(Math.round(v)); }
+function formatKes(v) { return 'KSh ' + fmt.format(Math.round(v)); }
+function formatPct(v) { return v.toFixed(1) + '%'; }
+function formatDt(ms) {
+  if (!ms) return '—';
+  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Nairobi' }).format(new Date(ms));
+}
+function formatBig(v) {
+  if (v >= 1e12) return '$' + (v / 1e12).toFixed(2) + 'T';
+  if (v >= 1e9) return '$' + (v / 1e9).toFixed(1) + 'B';
+  return formatUsd(v);
+}
+
+function currentDebt(nowMs) {
+  const secs = Math.max(0, (nowMs - S.debtTs) / 1000);
+  return S.debtBase * Math.pow(growthPerSec, secs);
+}
+
+function currentFx() { return S.fx > 0 ? S.fx : FALLBACK_FX; }
+
+// Load/save
+function saveState() {
+  try {
+    const keys = ['debtBase','debtYear','debtTs','fx','fxTs','gdpUsd','gdpYear','gdpYear','debtSeries','gdpSeries','focusYear','lang','paused'];
+    const o = {};
+    keys.forEach(k => o[k] = S[k]);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(o));
+  } catch {}
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return;
+    const o = JSON.parse(raw);
+    if (o.debtBase > 0) S.debtBase = o.debtBase;
+    if (o.debtYear) S.debtYear = o.debtYear;
+    if (o.debtTs) S.debtTs = o.debtTs;
+    if (o.fx > 0) S.fx = o.fx;
+    if (o.fxTs) S.fxTs = o.fxTs;
+    if (o.gdpUsd) S.gdpUsd = o.gdpUsd;
+    if (o.gdpYear) S.gdpYear = o.gdpYear;
+    if (Array.isArray(o.debtSeries) && o.debtSeries.length) S.debtSeries = o.debtSeries;
+    if (Array.isArray(o.gdpSeries) && o.gdpSeries.length) S.gdpSeries = o.gdpSeries;
+    if (o.focusYear) S.focusYear = o.focusYear;
+    if (o.lang === 'sw') S.lang = 'sw';
+    if (typeof o.paused === 'boolean') S.paused = o.paused;
+    S.usingFallback = !S.debtYear;
+  } catch {}
+}
+
+// API
+async function fetchJson(url, ms = 12000) {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), ms);
+  try {
+    const r = await fetch(url, { signal: ac.signal, cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+
+function extractSeries(json) {
+  if (!Array.isArray(json) || !Array.isArray(json[1])) throw new Error('Bad WB shape');
+  return json[1]
+    .filter(r => r && r.value != null && r.date != null)
+    .map(r => ({ year: +r.date, value: +r.value }))
+    .filter(r => isFinite(r.year) && isFinite(r.value) && r.value > 0)
+    .sort((a, b) => a.year - b.year);
+}
+
+async function fetchAll() {
+  const [debtR, gdpR, fxR] = await Promise.allSettled([
+    fetchJson('https://api.worldbank.org/v2/country/KE/indicator/DT.DOD.DECT.CD?format=json&per_page=200'),
+    fetchJson('https://api.worldbank.org/v2/country/KE/indicator/NY.GDP.MKTP.CD?format=json&per_page=200'),
+    fetchJson('https://api.exchangerate-api.com/v4/latest/USD')
+  ]);
+
+  const warns = [];
+
+  if (debtR.status === 'fulfilled') {
+    const series = extractSeries(debtR.value);
+    S.debtSeries = series;
+    const latest = [...series].sort((a,b) => b.year - a.year)[0];
+    if (latest && latest.year > 2015) {
+      S.debtBase = latest.value;
+      S.debtYear = latest.year;
+      S.usingFallback = false;
+      S.debtTs = Date.now();
+    } else {
+      S.usingFallback = true;
+      warns.push('World Bank debt series returned no recent value (post-2015), using $80B estimate.');
+    }
+  } else {
+    warns.push('Debt API failed: ' + (debtR.reason?.message || 'unknown') + '. Using cached or fallback value.');
+  }
+
+  if (gdpR.status === 'fulfilled') {
+    const series = extractSeries(gdpR.value);
+    S.gdpSeries = series;
+    const latest = [...series].sort((a,b) => b.year - a.year)[0];
+    if (latest) { S.gdpUsd = latest.value; S.gdpYear = latest.year; }
+    else warns.push('No GDP data returned.');
+  } else {
+    warns.push('GDP API failed: ' + (gdpR.reason?.message || 'unknown'));
+  }
+
+  if (fxR.status === 'fulfilled') {
+    const json = fxR.value;
+    const rate = +(json?.rates?.KES ?? json?.conversion_rates?.KES ?? 0);
+    if (rate > 0) { S.fx = rate; S.fxTs = Date.now(); }
+    else warns.push('FX API returned no usable KES rate.');
+  } else {
+    warns.push('FX API failed. Using cached/fallback rate.');
+    if (!S.fx) S.fx = FALLBACK_FX;
+  }
+
+  S.warnings = warns;
+  populateYearSelect();
+  buildTimeline();
+  buildMilestones();
+  renderCharts();
+  renderWarnings();
+  updateStatus();
+  saveState();
+}
+
+// TICK
+function tick() {
+  if (S.paused) return;
+  const now = Date.now();
+  const debt = currentDebt(now);
+  const fx = currentFx();
+  const kes = debt * fx;
+  const perCap = debt / POP;
+  const perCapKes = kes / POP;
+  const gdpRatio = S.gdpUsd ? (debt / S.gdpUsd) * 100 : 70;
+  const annual = debt * GROWTH_RATE;
+  const daily = annual / 365.2425;
+  const monthly = annual / 12;
+  const perSec = debt * (Math.pow(1 + GROWTH_RATE, 1 / SEC_PER_YEAR) - 1);
+
+  const ws = Math.floor(now / 1000);
+  if (ws !== lastSec) {
+    lastSec = ws;
+    setEl('usdCounter', formatUsd(debt));
+    setEl('kesCounter', formatKes(kes));
+  }
+
+  setEl('perSecTicker', formatKes(perSec) + ' / sec (' + formatUsd(perSec) + ')');
+  setEl('perMinTicker', formatKes(perSec * 60) + ' / min');
+  setEl('secondProgress', null, { width: ((now % 1000) / 1000 * 100) + '%' });
+
+  // Seconds since base
+  const secsSince = ((now - S.debtTs) / 1000);
+  const h = Math.floor(secsSince / 3600), m = Math.floor((secsSince % 3600) / 60), s = Math.floor(secsSince % 60);
+  setEl('secsSince', `${h}h ${m}m ${s}s since base`);
+
+  // Metrics row
+  setEl('m1Val', formatKes(perCapKes));
+  setEl('m2Val', formatPct(gdpRatio));
+  setEl('m3Val', formatUsd(daily));
+  setEl('m4Val', formatUsd(annual));
+
+  // Hero right panel
+  setEl('heroGdp', formatPct(gdpRatio));
+  setEl('heroPerCap', formatKes(perCapKes));
+
+  // Analysis
+  setEl('aVal1', formatKes(daily * fx));
+  setEl('aVal2', formatUsd(annual));
+  setEl('aVal3', formatKes(perCapKes));
+
+  // Risk
+  let risk = 'Manageable', riskCls = 'severity-low';
+  if (gdpRatio >= 90) { risk = 'Danger zone'; riskCls = 'severity-high'; }
+  else if (gdpRatio >= 75) { risk = 'High burden'; riskCls = 'severity-high'; }
+  else if (gdpRatio >= 55) { risk = 'Moderate risk'; riskCls = 'severity-med'; }
+  const aVal4 = document.getElementById('aVal4');
+  if (aVal4) { aVal4.textContent = risk; aVal4.className = 'a-val'; }
+
+  // Pressure
+  const pfill = document.getElementById('pressureFill');
+  if (pfill) {
+    pfill.style.width = Math.min(100, gdpRatio) + '%';
+    pfill.className = 'pressure-fill ' + (gdpRatio >= 75 ? 'high' : gdpRatio >= 55 ? 'medium' : 'low');
+  }
+  setEl('pressurePct', formatPct(gdpRatio));
+  const pp = document.getElementById('pressurePill');
+  if (pp) { pp.textContent = gdpRatio >= 75 ? 'High' : gdpRatio >= 55 ? 'Moderate' : 'Manageable'; pp.className = 'severity-pill ' + riskCls; }
+
+  // Life
+  setEl('l1Val', formatKes(perCapKes * 4) + ' / ' + formatUsd(perCap * 4));
+  setEl('l2Val', formatKes(monthly * fx) + ' / ' + formatUsd(monthly));
+  setEl('l3Val', formatKes(annual * fx) + ' / ' + formatUsd(annual));
+
+  // Comparison bar
+  const cmpKe = document.getElementById('cmpKeVal');
+  if (cmpKe) cmpKe.textContent = formatBig(debt);
+  const tzVal = 26e9, ugVal = 22e9, rwVal = 8e9, etVal = 28e9;
+  const maxVal = Math.max(debt, etVal);
+  const bars = { cmpKeBar: debt, cmpTzBar: tzVal, cmpUgBar: ugVal, cmpRwBar: rwVal, cmpEtBar: etVal };
+  Object.entries(bars).forEach(([id, v]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.width = (v / maxVal * 100) + '%';
+  });
+
+  // Simulator sync
+  updateSimulator();
+}
+
+function setEl(id, text, styles) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (text !== null && text !== undefined) el.textContent = text;
+  if (styles) Object.assign(el.style, styles);
+}
+
+// STATUS
+function updateStatus() {
+  const el = document.getElementById('dataStatus');
+  if (!el) return;
+  const sw = S.usingFallback;
+  el.innerHTML = `<span class="status-badge ${sw ? 'warn' : 'good'}">${sw ? '~ Estimate active' : '✓ Official data loaded'}</span>`;
+  setEl('lastFetch', formatDt(S.debtTs));
+  setEl('officialYear', S.debtYear ? String(S.debtYear) : 'Estimate');
+  setEl('fxRate', '1 USD = ' + fmt.format(Math.round(S.fx * 100) / 100) + ' KES');
+}
+
+function renderWarnings() {
+  const panel = document.getElementById('warningPanel');
+  const list = document.getElementById('warnList');
+  if (!panel || !list) return;
+  const w = S.warnings.filter(Boolean);
+  if (!w.length) { panel.classList.remove('show'); return; }
+  panel.classList.add('show');
+  list.innerHTML = w.map(x => `<li>${x}</li>`).join('');
+}
+
+// YEAR SELECT
+function populateYearSelect() {
+  const sel = document.getElementById('yearSelect');
+  if (!sel || !S.debtSeries.length) return;
+  const years = [...new Set(S.debtSeries.map(d => d.year))].sort((a,b) => a-b);
+  sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+  const focus = S.focusYear && years.includes(S.focusYear) ? S.focusYear : years[years.length - 1];
+  S.focusYear = focus;
+  sel.value = String(focus);
+}
+
+// TIMELINE
+function buildTimeline() {
+  const body = document.getElementById('timelineBody');
+  if (!body || !S.debtSeries.length) return;
+  const series = S.debtSeries;
+  const maxVal = Math.max(...series.map(d => d.value));
+  body.innerHTML = series.slice().reverse().map((d, i) => {
+    const prev = series[series.indexOf(d) - 1];
+    const pct = prev ? ((d.value - prev.value) / prev.value * 100) : 0;
+    const barWidth = (d.value / maxVal * 100).toFixed(1);
+    const pctStr = prev ? `<span class="tl-pct ${pct >= 0 ? 'up':'dn'}">${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%</span>` : '<span class="tl-pct">—</span>';
+    return `<div class="tl-row${d.year === S.focusYear ? '" style="background:var(--red-light)' : ''}">
+      <div class="tl-year">${d.year}</div>
+      <div><div class="tl-bar-wrap"><div class="tl-bar" style="width:${barWidth}%"></div></div></div>
+      <div class="tl-val">${formatUsd(d.value)}</div>
+      ${pctStr}
+    </div>`;
+  }).join('');
+}
+
+// MILESTONES
+const MILESTONES = [
+  { label: '$30B threshold', value: 30e9, note: 'Crossed around 2013' },
+  { label: '$50B threshold', value: 50e9, note: 'Crossed around 2018' },
+  { label: '$70B threshold', value: 70e9, note: 'Crossed around 2022' },
+  { label: '$80B threshold', value: 80e9, note: 'Recent estimate baseline' },
+  { label: '$100B threshold', value: 100e9, note: 'Projected future milestone' },
+  { label: '$120B threshold', value: 120e9, note: 'Projected future milestone' },
+  { label: '$150B threshold', value: 150e9, note: 'Long-range projection' },
+];
+
+function buildMilestones() {
+  const el = document.getElementById('milestonesList');
+  if (!el) return;
+  const now = currentDebt(Date.now());
+  el.innerHTML = MILESTONES.map(m => {
+    const past = now >= m.value;
+    let yearsAway = '';
+    if (!past && now > 0) {
+      const yrs = Math.log(m.value / now) / Math.log(1 + GROWTH_RATE);
+      yearsAway = '~' + yrs.toFixed(1) + ' years away';
+    }
+    return `<div class="milestone-row">
+      <div class="milestone-icon ${past ? 'past':'future'}">${past ? '✓' : '→'}</div>
+      <div><div class="m-label">${m.label}</div><div class="m-sub">${m.note}</div></div>
+      <span class="milestone-check ${past ? 'past':'future'}">${past ? 'Crossed' : yearsAway}</span>
+    </div>`;
+  }).join('');
+}
+
+// CHARTS
+function renderCharts() {
+  const debtC = document.getElementById('debtTrendChart');
+  const gdpC = document.getElementById('gdpTrendChart');
+  const growC = document.getElementById('growthChart');
+  const capC = document.getElementById('perCapChart');
+
+  const COLORS = { red: '#c0142a', green: '#1a6b3a', blue: '#1a4d8b', muted: '#9ca3af' };
+  const gridColor = 'rgba(0,0,0,0.05)';
+  const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#111';
+
+  const baseChartOpts = (yFmt) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: {
+      backgroundColor: 'rgba(255,255,255,0.98)', titleColor: '#111', bodyColor: '#6b7280',
+      borderColor: 'rgba(0,0,0,0.1)', borderWidth: 1,
+      callbacks: { label: ctx => yFmt(ctx.raw) }
+    }},
+    scales: {
+      x: { grid: { color: gridColor }, ticks: { color: '#9ca3af', font: { size: 11, family: 'DM Mono' }, maxRotation: 45 } },
+      y: { grid: { color: gridColor }, ticks: { color: '#9ca3af', font: { size: 11, family: 'DM Mono' }, callback: yFmt } }
+    }
+  });
+
+  if (S.debtSeries.length >= 2 && debtC) {
+    const labels = S.debtSeries.map(d => String(d.year));
+    const data = S.debtSeries.map(d => d.value / 1e9);
+    if (charts.debt) charts.debt.destroy();
+    charts.debt = new Chart(debtC, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data, borderColor: COLORS.red, backgroundColor: 'rgba(192,20,42,0.07)',
+          fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 6,
+          pointBackgroundColor: COLORS.red, borderWidth: 2
+        }]
+      },
+      options: { ...baseChartOpts(v => '$' + v.toFixed(1) + 'B') }
+    });
+  }
+
+  if (S.debtSeries.length >= 2 && S.gdpSeries.length >= 2 && gdpC) {
+    const ratios = S.debtSeries.map(d => {
+      const g = S.gdpSeries.find(g => g.year === d.year);
+      return g && g.value > 0 ? { year: d.year, value: (d.value / g.value) * 100 } : null;
+    }).filter(Boolean);
+    if (ratios.length >= 2) {
+      if (charts.gdp) charts.gdp.destroy();
+      charts.gdp = new Chart(gdpC, {
+        type: 'line',
+        data: {
+          labels: ratios.map(r => String(r.year)),
+          datasets: [{
+            data: ratios.map(r => r.value), borderColor: COLORS.green,
+            backgroundColor: 'rgba(26,107,58,0.07)', fill: true, tension: 0.4,
+            pointRadius: 3, pointHoverRadius: 6, pointBackgroundColor: COLORS.green, borderWidth: 2
+          }]
+        },
+        options: { ...baseChartOpts(v => v.toFixed(1) + '%') }
+      });
+    }
+  }
+
+  if (S.debtSeries.length >= 3 && growC) {
+    const gData = S.debtSeries.slice(1).map((d, i) => {
+      const prev = S.debtSeries[i];
+      return { year: d.year, value: (d.value - prev.value) / prev.value * 100 };
+    });
+    if (charts.growth) charts.growth.destroy();
+    charts.growth = new Chart(growC, {
+      type: 'bar',
+      data: {
+        labels: gData.map(d => String(d.year)),
+        datasets: [{
+          data: gData.map(d => d.value),
+          backgroundColor: gData.map(d => d.value >= 0 ? 'rgba(192,20,42,0.7)' : 'rgba(26,107,58,0.7)'),
+          borderColor: gData.map(d => d.value >= 0 ? COLORS.red : COLORS.green),
+          borderWidth: 1, borderRadius: 3
+        }]
+      },
+      options: { ...baseChartOpts(v => v.toFixed(1) + '%'), scales: {
+        x: { grid: { color: gridColor }, ticks: { color: '#9ca3af', font: { size: 11 }, maxRotation: 45 } },
+        y: { grid: { color: gridColor }, ticks: { color: '#9ca3af', font: { size: 11 }, callback: v => v.toFixed(0) + '%' } }
+      }}
+    });
+  }
+
+  if (S.debtSeries.length >= 2 && capC) {
+    const popByYear = {};
+    let p = 40_000_000;
+    const firstYear = S.debtSeries[0].year;
+    for (let y = firstYear; y <= 2030; y++) { popByYear[y] = p; p = Math.round(p * 1.022); }
+    const capData = S.debtSeries.map(d => ({ year: d.year, value: d.value / (popByYear[d.year] || POP) }));
+    if (charts.perCap) charts.perCap.destroy();
+    charts.perCap = new Chart(capC, {
+      type: 'line',
+      data: {
+        labels: capData.map(d => String(d.year)),
+        datasets: [{
+          data: capData.map(d => d.value), borderColor: '#1a4d8b',
+          backgroundColor: 'rgba(26,77,139,0.07)', fill: true, tension: 0.4,
+          pointRadius: 2, borderWidth: 2
+        }]
+      },
+      options: { ...baseChartOpts(v => '$' + fmt.format(Math.round(v))) }
+    });
+  }
+}
+
+// SIMULATOR
+let simChartInst = null;
+function updateSimulator() {
+  const rateEl = document.getElementById('simRate');
+  const yearsEl = document.getElementById('simYears');
+  const fxEl = document.getElementById('simFX');
+  const popEl = document.getElementById('simPop');
+  if (!rateEl) return;
+
+  const rate = +rateEl.value / 100;
+  const years = +yearsEl.value;
+  const fx = +fxEl.value;
+  const pop = +popEl.value * 1e6;
+
+  const baseDebt = currentDebt(Date.now());
+  const futureDebt = baseDebt * Math.pow(1 + rate, years);
+  const futureGdp = S.gdpUsd ? S.gdpUsd * Math.pow(1.055, years) : baseDebt / 0.7;
+  const gdpRatio = (futureDebt / futureGdp) * 100;
+
+  document.getElementById('simRateDisplay').textContent = (+rateEl.value).toFixed(1) + '%';
+  document.getElementById('simYearsDisplay').textContent = years + ' yr' + (years > 1 ? 's' : '');
+  document.getElementById('simFXDisplay').textContent = fx;
+  document.getElementById('simPopDisplay').textContent = (+popEl.value).toFixed(0) + 'M';
+
+  setEl('simLbl1', `Debt in USD after ${years} year${years > 1 ? 's' : ''}`);
+  setEl('simLbl2', `Debt in KSh after ${years} year${years > 1 ? 's' : ''}`);
+  setEl('simVal1', formatBig(futureDebt));
+  setEl('simVal2', 'KSh ' + fmt.format(Math.round(futureDebt * fx / 1e9)) + 'B');
+  setEl('simVal3', formatUsd(futureDebt / pop));
+  setEl('simVal4', formatPct(gdpRatio));
+
+  const riskEl = document.getElementById('simRisk');
+  if (riskEl) {
+    let r = 'Manageable', cls = 'severity-low';
+    if (gdpRatio >= 90) { r = 'Danger zone'; cls = 'severity-high'; }
+    else if (gdpRatio >= 75) { r = 'High burden'; cls = 'severity-high'; }
+    else if (gdpRatio >= 55) { r = 'Moderate risk'; cls = 'severity-med'; }
+    riskEl.textContent = r; riskEl.className = 'severity-pill ' + cls;
+  }
+
+  const desc = [
+    `At ${(rate*100).toFixed(1)}% annual growth, the debt more than ${(futureDebt/baseDebt).toFixed(1)}× over ${years} year${years>1?'s':''}.`,
+    gdpRatio > 90 ? ' This scenario pushes the debt-to-GDP ratio into the danger zone.' :
+    gdpRatio > 75 ? ' This creates a high-burden fiscal environment.' :
+    ' The debt level remains elevated but within manageable range.'
+  ].join('');
+  setEl('simDesc', desc);
+
+  // Sim chart
+  const projYears = Array.from({ length: years + 1 }, (_, i) => i);
+  const projData = projYears.map(i => (baseDebt * Math.pow(1 + rate, i)) / 1e9);
+  const simC = document.getElementById('simChart');
+  if (!simC) return;
+  if (simChartInst) simChartInst.destroy();
+  simChartInst = new Chart(simC, {
+    type: 'line',
+    data: {
+      labels: projYears.map(i => 'Y+' + i),
+      datasets: [{
+        data: projData, borderColor: '#c0142a',
+        backgroundColor: 'rgba(192,20,42,0.08)', fill: true, tension: 0.3,
+        pointRadius: projYears.length > 10 ? 0 : 3, borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => '$' + ctx.raw.toFixed(1) + 'B' } } },
+      scales: {
+        x: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#9ca3af', font: { size: 10 }, callback: v => '$' + v.toFixed(0) + 'B' } }
+      }
+    }
+  });
+}
+
+// FAQ
+const FAQS = [
+  {
+    q: 'What does "external debt" mean?',
+    a: 'External debt is money owed by Kenya to foreign creditors — including international institutions like the IMF and World Bank, foreign governments (bilateral loans), and commercial lenders abroad. It is measured in US dollars and represents Kenya\'s obligations to pay back principal and interest to parties outside the country.'
+  },
+  {
+    q: 'Why does the counter keep going up?',
+    a: 'Kenya borrows money regularly to finance budget deficits and capital projects. The annual growth rate of ~12% reflects recent trends in debt accumulation. This counter uses that rate to simulate growth in real time. The actual rate varies year by year — the 12% is a reasonable approximation based on historical data.'
+  },
+  {
+    q: 'What is debt-to-GDP and why does it matter?',
+    a: 'Debt-to-GDP is the ratio of the total debt to the size of the economy. It shows how manageable the debt is relative to what the country produces. Internationally, 60% is often cited as a caution threshold; above 90% raises serious sustainability concerns. Kenya currently sits in the moderate-to-high range.'
+  },
+  {
+    q: 'Is this an official government figure?',
+    a: 'No. This tool uses official World Bank external debt data (series DT.DOD.DECT.CD) as its anchor, then applies a growth simulation. The displayed figure is not a real-time figure from the Kenyan government or National Treasury. For official figures, consult the National Treasury of Kenya or the IMF\'s World Economic Outlook database.'
+  },
+  {
+    q: 'What is the exchange rate source?',
+    a: 'Exchange rates are fetched live from ExchangeRate-API.com. They update each time you load or refresh the page. The KSh figures shown are thus as current as possible but still approximate — the interbank rate and retail rates will differ slightly.'
+  },
+  {
+    q: 'What would reduce Kenya\'s debt?',
+    a: 'Debt can be reduced (or its burden reduced) through: faster economic growth (which grows GDP relative to debt), primary budget surpluses (spending less than revenue), debt restructuring or relief, currency appreciation (which reduces KSh-denominated debt service), and improved tax revenue collection.'
+  }
+];
+
+function buildFAQ() {
+  const list = document.getElementById('faqList');
+  if (!list) return;
+  list.innerHTML = FAQS.map((faq, i) => `
+    <div class="faq-item">
+      <button class="faq-q" type="button" onclick="toggleFaq(${i})" id="fq${i}">${faq.q} <span class="arrow">▾</span></button>
+      <div class="faq-a" id="fa${i}"><div class="faq-a-inner">${faq.a}</div></div>
+    </div>`).join('');
+}
+window.toggleFaq = function(i) {
+  const q = document.getElementById('fq' + i), a = document.getElementById('fa' + i);
+  if (!q || !a) return;
+  const isOpen = q.classList.contains('open');
+  q.classList.toggle('open', !isOpen);
+  a.classList.toggle('open', !isOpen);
+};
+
+// LANGUAGE
+const COPY = {
+  en: {
+    brandSub: 'Official data · Live simulation',
+    liveOn: 'Pause live',
+    liveOff: 'Resume live',
+    counterLabel: 'Live debt counter',
+    counterBadge: 'Simulated from official anchor · grows every 0.1 seconds',
+    m1Label: 'Debt per citizen',
+    m2Label: 'Debt-to-GDP',
+    m3Label: 'Daily increase',
+    m4Label: 'Annual increase',
+    aLbl1: 'Daily growth (KSh)',
+    aLbl2: 'Annual growth (USD)',
+    aLbl3: 'Citizen burden (KSh)',
+    aLbl4: 'Risk interpretation',
+    analysisTitle: 'Figure analysis',
+    pressureTitle: 'Fiscal pressure gauge',
+    lifeTitle: 'What it means for Kenyans',
+    l1Title: 'Family of four share',
+    l2Title: 'Monthly debt growth',
+    l3Title: 'What one year costs',
+    timelineTitle: 'Debt history table',
+    compareTitle: 'Regional debt comparison',
+    msTitle: 'Debt milestones',
+    noteTitle: 'Important note',
+  },
+  sw: {
+    brandSub: 'Takwimu rasmi · Uigaji hai',
+    liveOn: 'Sitisha hai',
+    liveOff: 'Endeleza hai',
+    counterLabel: 'Kipima deni',
+    counterBadge: 'Uigaji kutoka thamani rasmi · inakua kila sekunde 0.1',
+    m1Label: 'Deni kwa kila mtu',
+    m2Label: 'Deni kwa GDP',
+    m3Label: 'Ongezeko la kila siku',
+    m4Label: 'Ongezeko la kila mwaka',
+    aLbl1: 'Ukuaji wa siku (KSh)',
+    aLbl2: 'Ukuaji wa mwaka (USD)',
+    aLbl3: 'Mzigo kwa mtu (KSh)',
+    aLbl4: 'Tathmini ya hatari',
+    analysisTitle: 'Uchambuzi wa takwimu',
+    pressureTitle: 'Kipima shinikizo',
+    lifeTitle: 'Maana kwa Wakenya',
+    l1Title: 'Sehemu ya familia ya 4',
+    l2Title: 'Ukuaji wa mwezi',
+    l3Title: 'Gharama ya mwaka',
+    timelineTitle: 'Historia ya deni',
+    compareTitle: 'Ulinganisho wa kikanda',
+    msTitle: 'Mipaka ya deni',
+    noteTitle: 'Kumbuka',
+  }
+};
+
+function applyLang() {
+  const c = COPY[S.lang] || COPY.en;
+  const map = {
+    brandSub: 'brandSub', liveBtn: S.paused ? c.liveOff : c.liveOn,
+    counterLabel: 'counterLabel', counterBadge: 'counterBadge',
+    m1Label: 'm1Label', m2Label: 'm2Label', m3Label: 'm3Label', m4Label: 'm4Label',
+    aLbl1: 'aLbl1', aLbl2: 'aLbl2', aLbl3: 'aLbl3', aLbl4: 'aLbl4',
+    analysisTitle: 'analysisTitle', pressureTitle: 'pressureTitle',
+    lifeTitle: 'lifeTitle', l1Title: 'l1Title', l2Title: 'l2Title', l3Title: 'l3Title',
+    timelineTitle: 'timelineTitle', compareTitle: 'compareTitle',
+    msTitle: 'msTitle', noteTitle: 'noteTitle',
+  };
+  Object.entries(c).forEach(([key, val]) => setEl(key, val));
+  const liveBtnEl = document.getElementById('liveBtnLabel');
+  if (liveBtnEl) liveBtnEl.textContent = S.paused ? c.liveOff : c.liveOn;
+  document.getElementById('langLabel').textContent = S.lang === 'sw' ? 'SW / EN' : 'EN / SW';
+  document.documentElement.lang = S.lang;
+}
+
+// EVENTS
+function scrollTo(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+window.scrollTo = scrollTo;
+
+document.getElementById('refreshBtn').addEventListener('click', async () => {
+  if (refreshLock) return;
+  refreshLock = true;
+  const btn = document.getElementById('refreshBtn');
+  btn.innerHTML = '<span id="refreshInner"><span class="spin-icon"></span> Loading…</span>';
+  btn.disabled = true;
+  try { await fetchAll(); } catch (e) {
+    S.warnings.push('Refresh error: ' + (e.message || e));
+    renderWarnings();
+  }
+  btn.innerHTML = '<span id="refreshInner">↻ Refresh</span>';
+  btn.disabled = false;
+  refreshLock = false;
+});
+
+document.getElementById('langBtn').addEventListener('click', () => {
+  S.lang = S.lang === 'sw' ? 'en' : 'sw';
+  applyLang();
+  saveState();
+});
+
+document.getElementById('liveBtn').addEventListener('click', () => {
+  S.paused = !S.paused;
+  const dot = document.getElementById('liveDot');
+  if (dot) dot.classList.toggle('paused', S.paused);
+  const lbl = document.getElementById('liveBtnLabel');
+  if (lbl) lbl.textContent = S.paused ? (COPY[S.lang]||COPY.en).liveOff : (COPY[S.lang]||COPY.en).liveOn;
+  if (!S.paused) tick();
+  saveState();
+});
+
+document.getElementById('yearSelect').addEventListener('change', function() {
+  S.focusYear = +this.value;
+  buildTimeline();
+  saveState();
+});
+
+['simRate','simYears','simFX','simPop'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', updateSimulator);
+});
+
+// Nav chips
+document.querySelectorAll('.nav-chip').forEach(chip => {
+  chip.addEventListener('click', () => scrollTo(chip.dataset.target));
+});
+
+// Intersection observer for nav active + reveal
+const navMap = {};
+document.querySelectorAll('[data-nav-section]').forEach(s => { if (s.id) navMap[s.id] = s; });
+const navObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      document.querySelectorAll('.nav-chip').forEach(c => {
+        c.classList.toggle('active', c.dataset.target === e.target.id);
+      });
+    }
+  });
+}, { threshold: 0.25 });
+Object.values(navMap).forEach(s => navObserver.observe(s));
+
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); revealObserver.unobserve(e.target); }});
+}, { threshold: 0.1 });
+document.querySelectorAll('[data-reveal]').forEach(el => revealObserver.observe(el));
+
+// SHARE
+window.copyPageUrl = function() {
+  navigator.clipboard.writeText(location.href).then(() => alert('Link copied!')).catch(() => {});
+};
+window.copyDebtFigure = function() {
+  const debt = currentDebt(Date.now());
+  const text = `Kenya national debt: ${formatUsd(debt)} / ${formatKes(debt * currentFx())} (live simulation, ${new Date().toLocaleString()})`;
+  navigator.clipboard.writeText(text).then(() => alert('Copied: ' + text)).catch(() => {});
+};
+
+// INIT
+loadState();
+applyLang();
+buildFAQ();
+updateStatus();
+buildMilestones();
+
+// Sync sim FX with loaded state
+const simFxEl = document.getElementById('simFX');
+if (simFxEl) simFxEl.value = Math.round(S.fx) || 129;
+
+tickId = setInterval(tick, 100);
+tick();
+
+// Async data fetch
+fetchAll().catch(err => {
+  S.warnings.push('Initial fetch error: ' + (err.message || err));
+  renderWarnings();
+  updateStatus();
+});
+
+window.addEventListener('resize', () => {
+  Object.values(charts).forEach(c => { if (c && c.resize) c.resize(); });
+  if (simChartInst) simChartInst.resize();
+});
+})();
+</script>
+</body>
+</html>
